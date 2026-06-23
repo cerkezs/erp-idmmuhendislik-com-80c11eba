@@ -9,8 +9,86 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as QuotesRouteImport } from './routes/quotes'
+import { Route as ProductsRouteImport } from './routes/products'
+import { Route as ProductionsRouteImport } from './routes/productions'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MailRouteImport } from './routes/mail'
+import { Route as KasaRouteImport } from './routes/kasa'
+import { Route as InvoicesRouteImport } from './routes/invoices'
+import { Route as FilesRouteImport } from './routes/files'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as CompaniesRouteImport } from './routes/companies'
+import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuotesRoute = QuotesRouteImport.update({
+  id: '/quotes',
+  path: '/quotes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductsRoute = ProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductionsRoute = ProductionsRouteImport.update({
+  id: '/productions',
+  path: '/productions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MailRoute = MailRouteImport.update({
+  id: '/mail',
+  path: '/mail',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KasaRoute = KasaRouteImport.update({
+  id: '/kasa',
+  path: '/kasa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesRoute = InvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FilesRoute = FilesRouteImport.update({
+  id: '/files',
+  path: '/files',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompaniesRoute = CompaniesRouteImport.update({
+  id: '/companies',
+  path: '/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActionsRoute = ActionsRouteImport.update({
+  id: '/actions',
+  path: '/actions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +97,214 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/actions': typeof ActionsRoute
+  '/companies': typeof CompaniesRoute
+  '/expenses': typeof ExpensesRoute
+  '/files': typeof FilesRoute
+  '/invoices': typeof InvoicesRoute
+  '/kasa': typeof KasaRoute
+  '/mail': typeof MailRoute
+  '/notifications': typeof NotificationsRoute
+  '/productions': typeof ProductionsRoute
+  '/products': typeof ProductsRoute
+  '/quotes': typeof QuotesRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/actions': typeof ActionsRoute
+  '/companies': typeof CompaniesRoute
+  '/expenses': typeof ExpensesRoute
+  '/files': typeof FilesRoute
+  '/invoices': typeof InvoicesRoute
+  '/kasa': typeof KasaRoute
+  '/mail': typeof MailRoute
+  '/notifications': typeof NotificationsRoute
+  '/productions': typeof ProductionsRoute
+  '/products': typeof ProductsRoute
+  '/quotes': typeof QuotesRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/actions': typeof ActionsRoute
+  '/companies': typeof CompaniesRoute
+  '/expenses': typeof ExpensesRoute
+  '/files': typeof FilesRoute
+  '/invoices': typeof InvoicesRoute
+  '/kasa': typeof KasaRoute
+  '/mail': typeof MailRoute
+  '/notifications': typeof NotificationsRoute
+  '/productions': typeof ProductionsRoute
+  '/products': typeof ProductsRoute
+  '/quotes': typeof QuotesRoute
+  '/reports': typeof ReportsRoute
+  '/settings': typeof SettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/actions'
+    | '/companies'
+    | '/expenses'
+    | '/files'
+    | '/invoices'
+    | '/kasa'
+    | '/mail'
+    | '/notifications'
+    | '/productions'
+    | '/products'
+    | '/quotes'
+    | '/reports'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/actions'
+    | '/companies'
+    | '/expenses'
+    | '/files'
+    | '/invoices'
+    | '/kasa'
+    | '/mail'
+    | '/notifications'
+    | '/productions'
+    | '/products'
+    | '/quotes'
+    | '/reports'
+    | '/settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/actions'
+    | '/companies'
+    | '/expenses'
+    | '/files'
+    | '/invoices'
+    | '/kasa'
+    | '/mail'
+    | '/notifications'
+    | '/productions'
+    | '/products'
+    | '/quotes'
+    | '/reports'
+    | '/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActionsRoute: typeof ActionsRoute
+  CompaniesRoute: typeof CompaniesRoute
+  ExpensesRoute: typeof ExpensesRoute
+  FilesRoute: typeof FilesRoute
+  InvoicesRoute: typeof InvoicesRoute
+  KasaRoute: typeof KasaRoute
+  MailRoute: typeof MailRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ProductionsRoute: typeof ProductionsRoute
+  ProductsRoute: typeof ProductsRoute
+  QuotesRoute: typeof QuotesRoute
+  ReportsRoute: typeof ReportsRoute
+  SettingsRoute: typeof SettingsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quotes': {
+      id: '/quotes'
+      path: '/quotes'
+      fullPath: '/quotes'
+      preLoaderRoute: typeof QuotesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/products': {
+      id: '/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/productions': {
+      id: '/productions'
+      path: '/productions'
+      fullPath: '/productions'
+      preLoaderRoute: typeof ProductionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mail': {
+      id: '/mail'
+      path: '/mail'
+      fullPath: '/mail'
+      preLoaderRoute: typeof MailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kasa': {
+      id: '/kasa'
+      path: '/kasa'
+      fullPath: '/kasa'
+      preLoaderRoute: typeof KasaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoices': {
+      id: '/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof InvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/files': {
+      id: '/files'
+      path: '/files'
+      fullPath: '/files'
+      preLoaderRoute: typeof FilesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companies': {
+      id: '/companies'
+      path: '/companies'
+      fullPath: '/companies'
+      preLoaderRoute: typeof CompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actions': {
+      id: '/actions'
+      path: '/actions'
+      fullPath: '/actions'
+      preLoaderRoute: typeof ActionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +317,20 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActionsRoute: ActionsRoute,
+  CompaniesRoute: CompaniesRoute,
+  ExpensesRoute: ExpensesRoute,
+  FilesRoute: FilesRoute,
+  InvoicesRoute: InvoicesRoute,
+  KasaRoute: KasaRoute,
+  MailRoute: MailRoute,
+  NotificationsRoute: NotificationsRoute,
+  ProductionsRoute: ProductionsRoute,
+  ProductsRoute: ProductsRoute,
+  QuotesRoute: QuotesRoute,
+  ReportsRoute: ReportsRoute,
+  SettingsRoute: SettingsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
