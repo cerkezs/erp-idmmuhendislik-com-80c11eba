@@ -67,14 +67,21 @@ function FilesPage() {
   }, [all, q, selectedCo]);
 
   const byCompany = useMemo(() => {
-    const map = new Map<string, FileRow[]>();
+    const counts = new Map<string, number>();
     for (const f of all) {
       const k = f.company_name || "— Genel —";
-      if (!map.has(k)) map.set(k, []);
-      map.get(k)!.push(f);
+      counts.set(k, (counts.get(k) || 0) + 1);
     }
-    return Array.from(map.entries()).sort();
-  }, [all]);
+    // Tüm firmaları (dosyası olmasa da) sol ağaçta göster
+    const fromCompanies = ((companies as Array<{ name: string }>) || []).map((c) => c.name).filter(Boolean);
+    const names = new Set<string>(fromCompanies);
+    for (const k of counts.keys()) names.add(k);
+    const list = Array.from(names).sort((a, b) => a.localeCompare(b, "tr"));
+    // "— Genel —" en üstte
+    const general = "— Genel —";
+    const ordered = [general, ...list.filter((n) => n !== general)];
+    return ordered.map((name) => [name, counts.get(name) || 0] as const);
+  }, [all, companies]);
 
   return (
     <AppShell>
