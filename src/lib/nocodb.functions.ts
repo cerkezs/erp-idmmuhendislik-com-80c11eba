@@ -5,7 +5,14 @@ import { z } from "zod";
 const BASE_TITLE = "IDM ERP";
 
 function env() {
-  const url = process.env.NOCODB_URL?.replace(/\/$/, "");
+  // NOCODB_URL may point to a sub-path (e.g. /account/tokens). We only need the origin.
+  const raw = process.env.NOCODB_URL?.replace(/\/$/, "") || "";
+  let url = raw;
+  try {
+    url = new URL(raw).origin;
+  } catch {
+    /* keep raw */
+  }
   const token = process.env.NOCODB_API_TOKEN;
   if (!url || !token) throw new Error("NOCODB_URL veya NOCODB_API_TOKEN eksik");
   return { url, token };
@@ -28,73 +35,73 @@ async function nc<T = unknown>(path: string, init?: RequestInit): Promise<T> {
   return (text ? JSON.parse(text) : ({} as T)) as T;
 }
 
-// ---------- Schema definitions ----------
-type ColDef = { column_name: string; title: string; uidt: string; dt?: string; dtxp?: string };
+// ---------- Türkçe tablo / kolon tanımları ----------
+type ColDef = { title: string; uidt: string };
 
 const TABLES: Record<string, ColDef[]> = {
-  companies: [
-    { column_name: "name", title: "Ad", uidt: "SingleLineText" },
-    { column_name: "type", title: "Tip", uidt: "SingleLineText" }, // Müşteri / Tedarikçi
-    { column_name: "tax_no", title: "Vergi No", uidt: "SingleLineText" },
-    { column_name: "tax_office", title: "Vergi Dairesi", uidt: "SingleLineText" },
-    { column_name: "phone", title: "Telefon", uidt: "PhoneNumber" },
-    { column_name: "email", title: "E-posta", uidt: "Email" },
-    { column_name: "address", title: "Adres", uidt: "LongText" },
-    { column_name: "notes", title: "Notlar", uidt: "LongText" },
+  firmalar: [
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "vergi_no", uidt: "SingleLineText" },
+    { title: "vergi_dairesi", uidt: "SingleLineText" },
+    { title: "telefon", uidt: "PhoneNumber" },
+    { title: "eposta", uidt: "Email" },
+    { title: "adres", uidt: "LongText" },
+    { title: "notlar", uidt: "LongText" },
   ],
-  products: [
-    { column_name: "code", title: "Kod", uidt: "SingleLineText" },
-    { column_name: "name", title: "Ad", uidt: "SingleLineText" },
-    { column_name: "unit", title: "Birim", uidt: "SingleLineText" },
-    { column_name: "price", title: "Fiyat", uidt: "Decimal" },
-    { column_name: "currency", title: "Para Birimi", uidt: "SingleLineText" },
-    { column_name: "vat_rate", title: "KDV %", uidt: "Decimal" },
-    { column_name: "stock", title: "Stok", uidt: "Decimal" },
-    { column_name: "notes", title: "Notlar", uidt: "LongText" },
+  urunler: [
+    { title: "kod", uidt: "SingleLineText" },
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "birim", uidt: "SingleLineText" },
+    { title: "fiyat", uidt: "Decimal" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "kdv_orani", uidt: "Decimal" },
+    { title: "stok", uidt: "Decimal" },
+    { title: "notlar", uidt: "LongText" },
   ],
-  quotes: [
-    { column_name: "number", title: "Teklif No", uidt: "SingleLineText" },
-    { column_name: "company_id", title: "Firma ID", uidt: "Number" },
-    { column_name: "company_name", title: "Firma", uidt: "SingleLineText" },
-    { column_name: "date", title: "Tarih", uidt: "Date" },
-    { column_name: "valid_until", title: "Geçerlilik", uidt: "Date" },
-    { column_name: "status", title: "Durum", uidt: "SingleLineText" },
-    { column_name: "currency", title: "Para Birimi", uidt: "SingleLineText" },
-    { column_name: "subtotal", title: "Ara Toplam", uidt: "Decimal" },
-    { column_name: "vat_total", title: "KDV Toplam", uidt: "Decimal" },
-    { column_name: "total", title: "Genel Toplam", uidt: "Decimal" },
-    { column_name: "notes", title: "Notlar", uidt: "LongText" },
+  teklifler: [
+    { title: "numara", uidt: "SingleLineText" },
+    { title: "firma_id", uidt: "Number" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+    { title: "tarih", uidt: "Date" },
+    { title: "gecerlilik", uidt: "Date" },
+    { title: "durum", uidt: "SingleLineText" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "ara_toplam", uidt: "Decimal" },
+    { title: "kdv_toplam", uidt: "Decimal" },
+    { title: "genel_toplam", uidt: "Decimal" },
+    { title: "notlar", uidt: "LongText" },
   ],
-  quote_items: [
-    { column_name: "quote_id", title: "Teklif ID", uidt: "Number" },
-    { column_name: "product_id", title: "Ürün ID", uidt: "Number" },
-    { column_name: "description", title: "Açıklama", uidt: "LongText" },
-    { column_name: "qty", title: "Miktar", uidt: "Decimal" },
-    { column_name: "unit_price", title: "Birim Fiyat", uidt: "Decimal" },
-    { column_name: "vat_rate", title: "KDV %", uidt: "Decimal" },
-    { column_name: "line_total", title: "Satır Toplamı", uidt: "Decimal" },
+  teklif_kalemleri: [
+    { title: "teklif_id", uidt: "Number" },
+    { title: "urun_id", uidt: "Number" },
+    { title: "aciklama", uidt: "LongText" },
+    { title: "miktar", uidt: "Decimal" },
+    { title: "birim_fiyat", uidt: "Decimal" },
+    { title: "kdv_orani", uidt: "Decimal" },
+    { title: "satir_toplam", uidt: "Decimal" },
   ],
-  invoices: [
-    { column_name: "number", title: "Fatura No", uidt: "SingleLineText" },
-    { column_name: "company_id", title: "Firma ID", uidt: "Number" },
-    { column_name: "company_name", title: "Firma", uidt: "SingleLineText" },
-    { column_name: "date", title: "Tarih", uidt: "Date" },
-    { column_name: "due_date", title: "Vade", uidt: "Date" },
-    { column_name: "status", title: "Durum", uidt: "SingleLineText" },
-    { column_name: "currency", title: "Para Birimi", uidt: "SingleLineText" },
-    { column_name: "subtotal", title: "Ara Toplam", uidt: "Decimal" },
-    { column_name: "vat_total", title: "KDV Toplam", uidt: "Decimal" },
-    { column_name: "total", title: "Genel Toplam", uidt: "Decimal" },
-    { column_name: "notes", title: "Notlar", uidt: "LongText" },
+  faturalar: [
+    { title: "numara", uidt: "SingleLineText" },
+    { title: "firma_id", uidt: "Number" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+    { title: "tarih", uidt: "Date" },
+    { title: "vade_tarihi", uidt: "Date" },
+    { title: "durum", uidt: "SingleLineText" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "ara_toplam", uidt: "Decimal" },
+    { title: "kdv_toplam", uidt: "Decimal" },
+    { title: "genel_toplam", uidt: "Decimal" },
+    { title: "notlar", uidt: "LongText" },
   ],
-  invoice_items: [
-    { column_name: "invoice_id", title: "Fatura ID", uidt: "Number" },
-    { column_name: "product_id", title: "Ürün ID", uidt: "Number" },
-    { column_name: "description", title: "Açıklama", uidt: "LongText" },
-    { column_name: "qty", title: "Miktar", uidt: "Decimal" },
-    { column_name: "unit_price", title: "Birim Fiyat", uidt: "Decimal" },
-    { column_name: "vat_rate", title: "KDV %", uidt: "Decimal" },
-    { column_name: "line_total", title: "Satır Toplamı", uidt: "Decimal" },
+  fatura_kalemleri: [
+    { title: "fatura_id", uidt: "Number" },
+    { title: "urun_id", uidt: "Number" },
+    { title: "aciklama", uidt: "LongText" },
+    { title: "miktar", uidt: "Decimal" },
+    { title: "birim_fiyat", uidt: "Decimal" },
+    { title: "kdv_orani", uidt: "Decimal" },
+    { title: "satir_toplam", uidt: "Decimal" },
   ],
 };
 
@@ -129,14 +136,7 @@ async function ensureTable(baseId: string, name: string, columns: ColDef[]) {
     `/api/v2/meta/bases/${baseId}/tables`,
     {
       method: "POST",
-      body: JSON.stringify({
-        table_name: name,
-        title: name,
-        columns: [
-          // NocoDB needs at least one display column; Id auto-added
-          ...columns,
-        ],
-      }),
+      body: JSON.stringify({ title: name, columns }),
     },
   );
   return { id: created.id, status: "created" as const };
@@ -218,7 +218,43 @@ async function deleteRecord(tableName: string, recordId: number): Promise<{ ok: 
   return { ok: true };
 }
 
-// ---------- Companies ----------
+// ---------- Firmalar ----------
+// Frontend İngilizce alan adlarını kullanır; burada Türkçe sütunlara çeviririz.
+const FIRMA_MAP = {
+  name: "ad",
+  type: "tur",
+  tax_no: "vergi_no",
+  tax_office: "vergi_dairesi",
+  phone: "telefon",
+  email: "eposta",
+  address: "adres",
+  notes: "notlar",
+} as const;
+
+function toTr<T extends Record<string, unknown>>(
+  obj: T,
+  map: Record<string, string>,
+): Record<string, JsonValue> {
+  const out: Record<string, JsonValue> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const tr = map[k] || k;
+    out[tr] = (v ?? null) as JsonValue;
+  }
+  return out;
+}
+
+function fromTr(row: Record_, map: Record<string, string>): Record_ {
+  const out: Record_ = { Id: row.Id };
+  for (const [en, tr] of Object.entries(map)) {
+    out[en] = (row[tr] ?? null) as JsonValue;
+  }
+  // pass through extras
+  for (const [k, v] of Object.entries(row)) {
+    if (!(k in out)) out[k] = v;
+  }
+  return out;
+}
+
 const CompanyInput = z.object({
   name: z.string().min(1, "Ad zorunlu"),
   type: z.string().optional().default("Müşteri"),
@@ -232,20 +268,28 @@ const CompanyInput = z.object({
 
 export const listCompanies = createServerFn({ method: "GET" }).handler(
   async (): Promise<Record_[]> => {
-    return await listRecords("companies");
+    const rows = await listRecords("firmalar");
+    return rows.map((r) => fromTr(r, FIRMA_MAP));
   },
 );
 
 export const createCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CompanyInput.parse(d))
-  .handler(async ({ data }) => createRecord("companies", data));
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("firmalar", toTr(data, FIRMA_MAP)), FIRMA_MAP),
+  );
 
 export const updateCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({ id: z.number(), patch: CompanyInput.partial() }).parse(d),
   )
-  .handler(async ({ data }) => updateRecord("companies", data.id, data.patch));
+  .handler(async ({ data }) =>
+    fromTr(
+      await updateRecord("firmalar", data.id, toTr(data.patch, FIRMA_MAP)),
+      FIRMA_MAP,
+    ),
+  );
 
 export const deleteCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
-  .handler(async ({ data }) => deleteRecord("companies", data.id));
+  .handler(async ({ data }) => deleteRecord("firmalar", data.id));
