@@ -126,7 +126,7 @@ function ProductionsPage() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const [activeFilters, setActiveFilters] = useState<Filters>(emptyFilters("start_date", "desc"));
-  const [doneFilters, setDoneFilters] = useState<Filters>(emptyFilters("end_date" as SortKey === "end_date" ? "start_date" : "start_date", "desc"));
+  const [doneFilters, setDoneFilters] = useState<Filters>(emptyFilters("start_date", "desc"));
   const [doneOpen, setDoneOpen] = useState(false);
 
   const rows = (data || []) as Production[];
