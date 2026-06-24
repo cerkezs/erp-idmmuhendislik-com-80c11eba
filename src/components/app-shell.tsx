@@ -1,9 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Menu, X, Building2, ChevronDown, RefreshCw } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { getRates } from "@/lib/rates.functions";
 
 const GROUP_LABEL: Record<string, string> = {
   main: "Genel",
