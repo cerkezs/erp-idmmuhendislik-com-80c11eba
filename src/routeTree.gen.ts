@@ -25,6 +25,7 @@ import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsKurRouteImport } from './routes/settings_.kur'
+import { Route as SettingsKullanicilarRouteImport } from './routes/settings_.kullanicilar'
 import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
 import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bildirimler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
@@ -110,6 +111,11 @@ const SettingsKurRoute = SettingsKurRouteImport.update({
   path: '/settings/kur',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsKullanicilarRoute = SettingsKullanicilarRouteImport.update({
+  id: '/settings_/kullanicilar',
+  path: '/settings/kullanicilar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsKategorilerRoute = SettingsKategorilerRouteImport.update({
   id: '/settings_/kategoriler',
   path: '/settings/kategoriler',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/settings/backup': typeof SettingsBackupRoute
   '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
+  '/settings/kullanicilar': typeof SettingsKullanicilarRoute
   '/settings/kur': typeof SettingsKurRoute
 }
 export interface FileRoutesByTo {
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/settings/backup': typeof SettingsBackupRoute
   '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
+  '/settings/kullanicilar': typeof SettingsKullanicilarRoute
   '/settings/kur': typeof SettingsKurRoute
 }
 export interface FileRoutesById {
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/settings_/backup': typeof SettingsBackupRoute
   '/settings_/bildirimler': typeof SettingsBildirimlerRoute
   '/settings_/kategoriler': typeof SettingsKategorilerRoute
+  '/settings_/kullanicilar': typeof SettingsKullanicilarRoute
   '/settings_/kur': typeof SettingsKurRoute
 }
 export interface FileRouteTypes {
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/settings/backup'
     | '/settings/bildirimler'
     | '/settings/kategoriler'
+    | '/settings/kullanicilar'
     | '/settings/kur'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/settings/backup'
     | '/settings/bildirimler'
     | '/settings/kategoriler'
+    | '/settings/kullanicilar'
     | '/settings/kur'
   id:
     | '__root__'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/settings_/backup'
     | '/settings_/bildirimler'
     | '/settings_/kategoriler'
+    | '/settings_/kullanicilar'
     | '/settings_/kur'
   fileRoutesById: FileRoutesById
 }
@@ -287,6 +299,7 @@ export interface RootRouteChildren {
   SettingsBackupRoute: typeof SettingsBackupRoute
   SettingsBildirimlerRoute: typeof SettingsBildirimlerRoute
   SettingsKategorilerRoute: typeof SettingsKategorilerRoute
+  SettingsKullanicilarRoute: typeof SettingsKullanicilarRoute
   SettingsKurRoute: typeof SettingsKurRoute
 }
 
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsKurRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/kullanicilar': {
+      id: '/settings_/kullanicilar'
+      path: '/settings/kullanicilar'
+      fullPath: '/settings/kullanicilar'
+      preLoaderRoute: typeof SettingsKullanicilarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/kategoriler': {
       id: '/settings_/kategoriler'
       path: '/settings/kategoriler'
@@ -455,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsBackupRoute: SettingsBackupRoute,
   SettingsBildirimlerRoute: SettingsBildirimlerRoute,
   SettingsKategorilerRoute: SettingsKategorilerRoute,
+  SettingsKullanicilarRoute: SettingsKullanicilarRoute,
   SettingsKurRoute: SettingsKurRoute,
 }
 export const routeTree = rootRouteImport

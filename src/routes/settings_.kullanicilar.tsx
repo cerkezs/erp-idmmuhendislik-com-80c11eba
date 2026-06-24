@@ -12,7 +12,7 @@ import {
 import { listUsers, createUser, updateUser, deleteUser } from "@/lib/nocodb.functions";
 import { Users, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/settings/kullanicilar")({
+export const Route = createFileRoute("/settings_/kullanicilar")({
   head: () => ({ meta: [{ title: "Kullanıcılar — Ayarlar" }] }),
   component: KullanicilarPage,
 });
