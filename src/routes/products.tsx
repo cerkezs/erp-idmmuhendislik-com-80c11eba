@@ -8,12 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/select";
+import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   listProducts, createProduct, updateProduct, deleteProduct,
 } from "@/lib/nocodb.functions";
 import { Package, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+
+const currencySymbol: Record<string, string> = {
+  TRY: "₺",
+  USD: "$",
+  EUR: "€",
+};
 
 export const Route = createFileRoute("/products")({
   head: () => ({ meta: [{ title: "Ürünler — IDM ERP" }] }),
@@ -119,7 +128,7 @@ function ProductsPage() {
               <tr key={p.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 text-muted-foreground">{p.code || "—"}</td>
                 <td className="px-3 py-2 font-medium">{p.name || "—"}</td>
-                <td className="px-3 py-2 text-right">{(p.price ?? 0).toLocaleString("tr-TR")} {p.currency || "TRY"}</td>
+                <td className="px-3 py-2 text-right">{(p.price ?? 0).toLocaleString("tr-TR")} {currencySymbol[p.currency || "TRY"] || p.currency || "TRY"}</td>
                 <td className="px-3 py-2 text-right">{p.vat_rate ?? 0}</td>
                 <td className="px-3 py-2 text-right">{p.stock ?? 0}</td>
                 <td className="px-3 py-2 text-muted-foreground">{p.unit || "—"}</td>
@@ -181,7 +190,16 @@ function ProductForm({ initial, onSubmit, submitting }: {
           </div>
           <div className="grid gap-1.5">
             <Label>Döviz</Label>
-            <Input value={vals.currency || "TRY"} onChange={(e) => set("currency", e.target.value)} />
+            <Select value={vals.currency || "TRY"} onValueChange={(v) => set("currency", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Döviz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TRY">₺ TRY</SelectItem>
+                <SelectItem value="USD">$ USD</SelectItem>
+                <SelectItem value="EUR">€ EUR</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5">
             <Label>KDV %</Label>
