@@ -90,7 +90,7 @@ function FilesPage() {
           <div className="grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary"><FilesIcon className="h-5 w-5" /></div>
           <div>
             <h1 className="text-xl font-semibold">Dosyalar</h1>
-            <p className="text-sm text-muted-foreground">{all.length} kayıt · {byCompany.length} firma</p>
+            <p className="text-sm text-muted-foreground">{all.length} kayıt · {byCompany.length} klasör</p>
           </div>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
