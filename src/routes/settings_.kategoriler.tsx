@@ -11,7 +11,7 @@ import {
 } from "@/lib/nocodb.functions";
 import { Tags, Plus, Trash2, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/settings/kategoriler")({
+export const Route = createFileRoute("/settings_/kategoriler")({
   head: () => ({ meta: [{ title: "Kategoriler — Ayarlar" }] }),
   component: KategorilerPage,
 });

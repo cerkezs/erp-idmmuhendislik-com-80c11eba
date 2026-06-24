@@ -24,6 +24,7 @@ import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
@@ -102,6 +103,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsKategorilerRoute = SettingsKategorilerRouteImport.update({
+  id: '/settings_/kategoriler',
+  path: '/settings/kategoriler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsBackupRoute = SettingsBackupRouteImport.update({
   id: '/settings_/backup',
   path: '/settings/backup',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
+  '/settings/kategoriler': typeof SettingsKategorilerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
+  '/settings/kategoriler': typeof SettingsKategorilerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings_/backup': typeof SettingsBackupRoute
+  '/settings_/kategoriler': typeof SettingsKategorilerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings/backup'
+    | '/settings/kategoriler'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings/backup'
+    | '/settings/kategoriler'
   id:
     | '__root__'
     | '/'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings_/backup'
+    | '/settings_/kategoriler'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   ApiBackupRoute: typeof ApiBackupRoute
   SettingsBackupRoute: typeof SettingsBackupRoute
+  SettingsKategorilerRoute: typeof SettingsKategorilerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +371,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/kategoriler': {
+      id: '/settings_/kategoriler'
+      path: '/settings/kategoriler'
+      fullPath: '/settings/kategoriler'
+      preLoaderRoute: typeof SettingsKategorilerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/backup': {
       id: '/settings_/backup'
       path: '/settings/backup'
@@ -393,6 +413,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   ApiBackupRoute: ApiBackupRoute,
   SettingsBackupRoute: SettingsBackupRoute,
+  SettingsKategorilerRoute: SettingsKategorilerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
