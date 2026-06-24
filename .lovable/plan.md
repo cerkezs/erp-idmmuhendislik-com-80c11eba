@@ -1,55 +1,76 @@
-## Üretim Emirleri (`/productions`) iyileştirmeleri
+## Firma dosyaları + sistem yedekleme
 
-### 1. Duruma göre renklendirme
-Her satır için `status` değerine göre sol kenar şeridi + rozet rengi:
-- **Planlandı** → mavi (`border-l-blue-500`, badge `bg-blue-500/15 text-blue-600`)
-- **Üretimde** → amber/turuncu
-- **Beklemede** → gri
-- **Tamamlandı** → yeşil
-- **İptal** → kırmızı
+### 1) Firma kaydedildiğinde Dosyalar'da otomatik klasör
 
-Şu anki düz `bg-muted` rozet bu `statusStyles` haritasıyla değişecek.
+Şu an `Dosyalar` sayfası firmaları, **sadece dosya kaydı olan** firmaları sol ağaçta gösteriyor. Yeni davranış:
 
-### 2. İki bölümlü liste: Aktif & Tamamlanan
-- `rows` ikiye ayrılır: `active = status !== "Tamamlandı"`, `done = status === "Tamamlandı"`.
-- Üstte **"Aktif Üretim Emirleri"** tablosu (Planlandı / Üretimde / Beklemede / İptal).
-- Altında ayrı kart olarak **"Tamamlanan Emirler"** tablosu — varsayılan kapalı (collapsible), başlığında sayaç (`{done.length}`).
-- Bir emrin durumu "Tamamlandı" yapıldığında otomatik üstten çıkıp alt bölüme düşer (zaten aynı `rows` üzerinden filtre).
+- Sol ağaç `companies` listesinden üretilecek (dosya olmasa da). Her firma için "klasör" satırı görünür.
+- Dosya sayacı her firma için ayrıca hesaplanır (`0` olabilir).
+- Hiçbir veri tabanı kaydı eklenmez (boş klasör = sanal). Bu, ek migration veya yer israfı yapmaz; firma silindiğinde klasör doğal olarak kaybolur.
+- "— Genel —" (firmasız) klasörü en üstte kalır.
+- Bir firma satırına tıklayınca o firmanın bütün dosyaları sağda listelenir (mevcut filtre mantığı).
 
-### 3. Her iki bölüm için gelişmiş arama & sıralama
-Üst toolbar (her iki tabloya ayrı state):
-- **Arama kutusu**: no / firma / ürün / not alanlarında case-insensitive arama.
-- **Durum filtresi** (multi-select chips — aktif tablo için).
-- **Firma filtresi** (select, mevcut firmalar listesinden).
-- **Tarih aralığı**: başlangıç ve bitiş için "şundan / şuna" date inputları.
-- **Sıralama**: dropdown — Tarih (yeni→eski / eski→yeni), Emir No, Firma A-Z, Maliyet (artan/azalan), Miktar.
-- Sütun başlıklarına tıklayınca da sıralama (ok ikonuyla).
-- Sağda **"Temizle"** butonu ve aktif filtre sayısı rozeti.
+### 2) Dosya işlemleri (görüntüle / sil / indir)
 
-Filtre + sıralama hafif `useMemo` ile client-side. URL search params'a yazmak opsiyonel (şu an yapmıyoruz, sade tutulacak).
+Şu an satırda sadece "düzenle" ve "sil" var, dosya adı `url` varsa yeni sekmede açılıyor. Aşağıdaki değişiklikler:
 
-### 4. Diğer sayfalardaki benzer ihtiyaç
-Aynı arama/sıralama/filtre paterninden fayda görecek mevcut listeler:
+- **Görüntüle**: göz ikonu → `url`'yi yeni sekmede açar (PDF/IMG/HTML tarayıcıda önizlenir).
+- **İndir**: download ikonu → `<a href={url} download>` ile direkt indirme tetikler. `url` boşsa buton disabled.
+- **Sil**: zaten var, korunur (kayıt silinir; sunucudaki dosyayı silmez — kullanıcı not bilsin).
+- **Düzenle**: zaten var.
+- URL alanı için form alanı zaten var; "kendi sunucunda" tutulan dosyanın HTTP linkini buraya yapıştırınca tüm aksiyonlar çalışır.
 
-| Sayfa | Önerilen filtreler | Sıralama |
-|---|---|---|
-| `/products` | Arama (ad/sku), kategori, döviz | Ad, fiyat, stok |
-| `/companies` | Arama (ad/vergi no), tür (müşteri/tedarikçi), şehir | Ad, oluşturma |
-| `/invoices` | Arama, durum (ödendi/bekliyor), firma, tarih aralığı | Tarih, tutar, vade |
-| `/quotes` | Arama, durum, firma, tarih aralığı | Tarih, tutar |
-| `/expenses` | Arama, kategori, firma, tarih aralığı | Tarih, tutar |
-| `/kasa` | Arama, hesap, tür (gelir/gider), tarih aralığı | Tarih, tutar |
-| `/files` | Arama (ad), tür, klasör | Ad, boyut, tarih |
-| `/mail` | Arama (konu/gönderen), klasör, okundu/okunmadı | Tarih |
+> Not: Dosyalar fiziksel olarak sizin sunucunuzda durduğu için "indir/görüntüle" tarayıcı tarafından doğrudan o linke gider — bu en doğru yaklaşım, ek köprü/proxy gerekmez. Kayıt sadece metadata (ad, kategori, firma, link, notlar) tutar.
 
-Yaygın bir desen olduğu için ortak bir `<ListToolbar>` (arama + filtre slotu + sıralama dropdown'u) ve `useListFilters` hook'u oluşturulabilir — ilk olarak `/productions`'a uygulanır, sonra diğer sayfalara aynı bileşenle taşınır.
+### 3) Ayarlar > Yedekleme
+
+Yeni sayfa: `src/routes/settings.backup.tsx` (route: `/settings/backup`). Ayarlar grid'inden yeni bir kart ile bağlanır ("Yedekleme").
+
+Sayfa UI:
+- Checkbox listesi (bölümler): Firmalar, Ürünler, Teklifler (+ kalemler), Faturalar (+ kalemler), Üretim Emirleri (+ aşamalar), Giderler, Kasa (hesaplar + hareketler), Dosyalar (metadata), Mail Log, Bildirimler.
+- "Tümünü seç / Hiçbiri" tek tıkla.
+- "Firma bazlı kategorize et" checkbox'ı (varsayılan açık): seçili ise ZIP içinde her firma için ayrı klasör + içinde o firmanın CSV'leri; kapalı ise düz CSV (her tablo için bir dosya).
+- Opsiyonel: tarih aralığı (başlangıç/bitiş) — sadece tarih içeren tabloları filtreler.
+- "Yedeği indir" butonu → server function ZIP üretir, indirme tetiklenir.
+
+ZIP yapısı (firma bazlı modda):
+```
+idm-erp-backup-2026-06-24.zip
+├── _meta.json                  (sürüm, tarih, içerilen bölümler)
+├── firmalar.csv                (tüm firmalar düz liste)
+├── firmasiz/                   (firma bağı olmayan kayıtlar)
+│   ├── giderler.csv
+│   └── ...
+├── ACME Ltd/                   (her firma için bir klasör; ad slugify edilir)
+│   ├── teklifler.csv
+│   ├── teklif_kalemleri.csv
+│   ├── faturalar.csv
+│   ├── fatura_kalemleri.csv
+│   ├── uretim_emirleri.csv
+│   ├── uretim_asamalari.csv
+│   ├── giderler.csv
+│   ├── dosyalar.csv
+│   └── mail_log.csv
+└── ...
+```
+
+Düz modda: yalnızca tablo başına bir CSV.
 
 ### Teknik notlar
-- Sadece `src/routes/productions.tsx` düzenlenecek (UI).
-- Tip yapısı / nocodb fonksiyonları değişmeyecek; filtre + sıralama client-side, mevcut `useQuery` aynı kalır.
-- Renkler için Tailwind utility'leri yeterli; design token'a gerek yok (durum renkleri evrensel semantik).
 
-### Bu plan sonrası
-Onaylarsan önce **sadece `/productions`** üzerinde uygulayacağım (renk + iki bölüm + toolbar). Diğer sayfalar için arama/sıralama'yı **istediğin sırayla ayrı turlarda** ekleyebiliriz — hepsini birden yaparsak bu PR çok büyük olur.
+- ZIP üretimi: `fflate` (Workers-uyumlu, salt-JS, küçük) — `bun add fflate`. JSZip de uyumlu ama fflate daha hafif.
+- Yeni server route: `src/routes/api/backup.ts` (POST). Body: seçili bölüm/filtre. NocoDB'den `listRecords` ile çekilir, CSV'ye dönülür (özel karakterler için tırnak/kaçış), fflate ile ZIP, `Response` ile `application/zip` döner.
+- "RAR" tarayıcıda üretilemez; ZIP standartı kullanılıyor (kullanıcı talebi onaylandı).
+- Dosyalar (binary) yedeğe **dahil edilmez** — sadece metadata/URL listesi (`dosyalar.csv`). Fiziksel dosyalar zaten sizin sunucunuzda; oraya ayrıca rsync/backup önerilir (yedeğin içine sadece URL'ler ve notlar girer).
+- CSV: UTF-8 BOM ile başlar (Excel TR için), `;` veya `,` seçimi varsayılan `,`.
 
-**Soru**: Diğer sayfalardan hangilerine de bu turda aynı toolbar'ı eklemememi istersin? (Yoksa önce sadece üretim, sonra tek tek mi gidelim?)
+### Etkilenen dosyalar
+
+- `src/routes/files.tsx` — sol ağaç firmalar listesinden, görüntüle/indir butonları, sayaçlar.
+- `src/routes/settings.tsx` — "Yedekleme" kartı eklenir, link `/settings/backup`'a.
+- `src/routes/settings.backup.tsx` — **yeni** sayfa (UI + indirme tetikleyici).
+- `src/routes/api/backup.ts` — **yeni** server route, ZIP üretimi.
+- `package.json` — `fflate` eklenir.
+
+### Sırada
+Onaylarsan bunu uygularım. Sonraki adımlar (ayrı tur): üretim/teklif/fatura sayfalarına aynı `ListToolbar` paterni.
