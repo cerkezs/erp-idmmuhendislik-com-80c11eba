@@ -81,7 +81,7 @@ export const getServerHealth = createServerFn({ method: "GET" }).handler(async (
         headers: healthToken ? { "X-Token": healthToken } : {},
         signal: AbortSignal.timeout(5000),
       });
-      if (r.ok) healthData = await r.json();
+      if (r.ok) healthData = await r.text();
       else healthError = `HTTP ${r.status}`;
     } catch (e) {
       healthError = (e as Error).message;
