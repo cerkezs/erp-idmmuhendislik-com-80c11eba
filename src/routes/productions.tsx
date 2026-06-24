@@ -37,6 +37,64 @@ type Stage = {
 const STATUS = ["Planlandı", "Üretimde", "Beklemede", "Tamamlandı", "İptal"];
 const STAGE_STATUS = ["Beklemede", "Devam", "Tamamlandı"];
 
+const STATUS_STYLE: Record<string, { row: string; badge: string }> = {
+  "Planlandı":   { row: "border-l-4 border-l-blue-500",   badge: "bg-blue-500/15 text-blue-600 dark:text-blue-400" },
+  "Üretimde":    { row: "border-l-4 border-l-amber-500",  badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  "Beklemede":   { row: "border-l-4 border-l-slate-400",  badge: "bg-slate-500/15 text-slate-600 dark:text-slate-300" },
+  "Tamamlandı":  { row: "border-l-4 border-l-emerald-500",badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  "İptal":       { row: "border-l-4 border-l-red-500",    badge: "bg-red-500/15 text-red-600 dark:text-red-400" },
+};
+
+type SortKey = "start_date" | "number" | "company_name" | "total_cost" | "qty";
+type SortDir = "asc" | "desc";
+
+type Filters = {
+  q: string;
+  statuses: string[]; // empty = all
+  company: string;   // company_name; "" = all
+  from: string;
+  to: string;
+  sortKey: SortKey;
+  sortDir: SortDir;
+};
+
+const emptyFilters = (sortKey: SortKey = "start_date", sortDir: SortDir = "desc"): Filters => ({
+  q: "", statuses: [], company: "", from: "", to: "", sortKey, sortDir,
+});
+
+function applyFilters(rows: Production[], f: Filters): Production[] {
+  const q = f.q.trim().toLowerCase();
+  let out = rows.filter((p) => {
+    if (q) {
+      const hay = `${p.number || ""} ${p.company_name || ""} ${p.product_name || ""} ${p.notes || ""}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    if (f.statuses.length && !f.statuses.includes(p.status || "")) return false;
+    if (f.company && (p.company_name || "") !== f.company) return false;
+    if (f.from && (p.start_date || "") < f.from) return false;
+    if (f.to && (p.start_date || "") > f.to) return false;
+    return true;
+  });
+  const dir = f.sortDir === "asc" ? 1 : -1;
+  out = [...out].sort((a, b) => {
+    const av = a[f.sortKey] ?? "";
+    const bv = b[f.sortKey] ?? "";
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+    return String(av).localeCompare(String(bv), "tr") * dir;
+  });
+  return out;
+}
+
+function activeFilterCount(f: Filters, includeStatuses: boolean) {
+  let n = 0;
+  if (f.q) n++;
+  if (includeStatuses && f.statuses.length) n++;
+  if (f.company) n++;
+  if (f.from) n++;
+  if (f.to) n++;
+  return n;
+}
+
 function ProductionsPage() {
   const qc = useQueryClient();
   const list = useServerFn(listProductions);
