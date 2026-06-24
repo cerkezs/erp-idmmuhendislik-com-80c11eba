@@ -1303,15 +1303,16 @@ export const createMailAccount = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const rec = fromTr(await createRecord("mail_hesaplari", toTr(data, MH_MAP)), MH_MAP) as Record<string, unknown>;
     delete rec.smtp_pass_enc;
-    return rec;
+    return rec as { Id?: number; [k: string]: string | number | boolean | undefined };
   });
 export const updateMailAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number(), patch: MailAccountInput.partial() }).parse(d))
   .handler(async ({ data }) => {
     const rec = fromTr(await updateRecord("mail_hesaplari", data.id, toTr(data.patch, MH_MAP)), MH_MAP) as Record<string, unknown>;
     delete rec.smtp_pass_enc;
-    return rec;
+    return rec as { Id?: number; [k: string]: string | number | boolean | undefined };
   });
+
 export const deleteMailAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("mail_hesaplari", data.id));
