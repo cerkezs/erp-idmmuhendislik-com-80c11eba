@@ -102,7 +102,7 @@ export function DocumentForm({
                 value={vals.company_id ? String(vals.company_id) : ""}
                 onValueChange={(v) => {
                   const id = Number(v);
-                  const c = (companies.data || []).find((x: { Id: number }) => x.Id === id);
+                  const c = (companies.data || []).find((x) => (x as { Id: number }).Id === id);
                   setVals((p) => ({ ...p, company_id: id, company_name: (c as { name?: string })?.name || "" }));
                 }}
               >
