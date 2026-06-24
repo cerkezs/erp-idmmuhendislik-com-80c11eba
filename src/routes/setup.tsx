@@ -54,13 +54,27 @@ function SetupPage() {
             (yoksa) oluşturur ve şu tabloları kurar:
           </p>
           <ul className="mt-3 grid grid-cols-2 gap-2 text-sm">
-            {["companies", "products", "quotes", "quote_items", "invoices", "invoice_items"].map(
-              (t) => (
-                <li key={t} className="rounded-md bg-muted/40 px-3 py-1.5 font-mono text-xs">
-                  {t}
-                </li>
-              ),
-            )}
+            {[
+              "firmalar",
+              "urunler",
+              "teklifler",
+              "teklif_kalemleri",
+              "faturalar",
+              "fatura_kalemleri",
+              "giderler",
+              "kasalar",
+              "kasa_hareketleri",
+              "bildirimler",
+              "uretim_emirleri",
+              "uretim_asamalari",
+              "gorevler",
+              "dosyalar",
+              "mail_log",
+            ].map((t) => (
+              <li key={t} className="rounded-md bg-muted/40 px-3 py-1.5 font-mono text-xs">
+                {t}
+              </li>
+            ))}
           </ul>
 
           <Button onClick={handleRun} disabled={loading} className="mt-5">
