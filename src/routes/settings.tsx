@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { Settings, Users, Mail, RefreshCw, Bell, Server, Tags, Wallet } from "lucide-react";
+import { Settings, Users, Mail, RefreshCw, Bell, Server, Tags, Wallet, Archive } from "lucide-react";
 
 const SECTIONS = [
   { to: "/settings", label: "Kullanıcılar & Roller", icon: Users, desc: "Kullanıcı ekle, rol ata, bildirim tercih matrisi" },
@@ -9,6 +9,7 @@ const SECTIONS = [
   { to: "/settings", label: "Bildirim Türleri", icon: Bell, desc: "Vade, stok, üretim, kasa — kanal başına aç/kapa" },
   { to: "/settings", label: "Kasa Hesapları", icon: Wallet, desc: "Çoklu kasa (TRY/USD/EUR) tanımları" },
   { to: "/settings", label: "Kategoriler", icon: Tags, desc: "Gider kategorileri, ürün kategorileri" },
+  { to: "/settings/backup", label: "Yedekleme", icon: Archive, desc: "Tüm sistemin ZIP yedeği · bölüm seç · firma bazlı klasörle" },
   { to: "/settings", label: "Sunucu Durumu", icon: Server, desc: "Disk, RAM, mini-API, NocoDB sağlık durumu" },
 ];
 
