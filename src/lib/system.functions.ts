@@ -73,7 +73,7 @@ export const getServerHealth = createServerFn({ method: "GET" }).handler(async (
     }
   }
 
-  let healthData: Record<string, unknown> | null = null;
+  let healthData: string | null = null;
   let healthError = "";
   if (healthUrl) {
     try {
