@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as QuotesRouteImport } from './routes/quotes'
@@ -24,6 +25,11 @@ import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/reports'
     | '/settings'
+    | '/setup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/reports'
     | '/settings'
+    | '/setup'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/reports'
     | '/settings'
+    | '/setup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,10 +222,18 @@ export interface RootRouteChildren {
   QuotesRoute: typeof QuotesRoute
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
+  SetupRoute: typeof SetupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -330,17 +350,8 @@ const rootRouteChildren: RootRouteChildren = {
   QuotesRoute: QuotesRoute,
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
+  SetupRoute: SetupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

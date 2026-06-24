@@ -178,7 +178,8 @@ async function getTableId(name: string): Promise<string> {
 }
 
 // ---------- Generic CRUD ----------
-type Record_ = Record<string, unknown> & { Id?: number };
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+type Record_ = { [k: string]: JsonValue } & { Id?: number };
 
 async function listRecords(tableName: string, limit = 200): Promise<Record_[]> {
   const id = await getTableId(tableName);
@@ -188,7 +189,7 @@ async function listRecords(tableName: string, limit = 200): Promise<Record_[]> {
   return res.list || [];
 }
 
-async function createRecord(tableName: string, data: Record<string, unknown>) {
+async function createRecord(tableName: string, data: Record<string, JsonValue>): Promise<Record_> {
   const id = await getTableId(tableName);
   return nc<Record_>(`/api/v2/tables/${id}/records`, {
     method: "POST",
@@ -199,21 +200,22 @@ async function createRecord(tableName: string, data: Record<string, unknown>) {
 async function updateRecord(
   tableName: string,
   recordId: number,
-  data: Record<string, unknown>,
-) {
+  data: Record<string, JsonValue>,
+): Promise<Record_> {
   const id = await getTableId(tableName);
-  return nc(`/api/v2/tables/${id}/records`, {
+  return nc<Record_>(`/api/v2/tables/${id}/records`, {
     method: "PATCH",
     body: JSON.stringify({ Id: recordId, ...data }),
   });
 }
 
-async function deleteRecord(tableName: string, recordId: number) {
+async function deleteRecord(tableName: string, recordId: number): Promise<{ ok: true }> {
   const id = await getTableId(tableName);
-  return nc(`/api/v2/tables/${id}/records`, {
+  await nc(`/api/v2/tables/${id}/records`, {
     method: "DELETE",
     body: JSON.stringify({ Id: recordId }),
   });
+  return { ok: true };
 }
 
 // ---------- Companies ----------
