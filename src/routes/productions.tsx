@@ -179,8 +179,9 @@ function ProductionsPage() {
   );
 }
 
-function StagesPanel({ productionId, companies, onTotalChange }: {
+function StagesPanel({ productionId, currentTotal, companies, onTotalChange }: {
   productionId: number;
+  currentTotal: number;
   companies: Array<{ Id: number; name: string }>;
   onTotalChange: (total: number) => void;
 }) {
@@ -210,7 +211,11 @@ function StagesPanel({ productionId, companies, onTotalChange }: {
 
   const stages = (data || []) as Stage[];
   const total = stages.reduce((s, x) => s + (x.cost || 0), 0);
-  if (Math.abs(total - 0) >= 0 && stages.length > 0) onTotalChange(total);
+  useEffect(() => {
+    if (data && Math.abs(currentTotal - total) > 0.01) onTotalChange(total);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, data]);
+
 
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Stage | null>(null);
