@@ -14,6 +14,7 @@ import {
   Settings,
   ListChecks,
   Mail,
+  Database,
 } from "lucide-react";
 import type { ComponentType } from "react";
 
@@ -40,4 +41,5 @@ export const MODULES: ModuleDef[] = [
   { to: "/reports", label: "Raporlar", icon: BarChart3, group: "system", desc: "Tarihsel raporlar" },
   { to: "/notifications", label: "Bildirimler", icon: Bell, group: "system", desc: "Bildirim merkezi" },
   { to: "/settings", label: "Ayarlar", icon: Settings, group: "system", desc: "Kullanıcı, SMTP, kur, roller" },
+  { to: "/setup", label: "Kurulum", icon: Database, group: "system", desc: "NocoDB şema kurulumu" },
 ];
