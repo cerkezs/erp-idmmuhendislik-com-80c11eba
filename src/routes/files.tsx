@@ -13,7 +13,7 @@ import {
 import {
   listFiles, createFile, updateFile, deleteFile, listCompanies,
 } from "@/lib/nocodb.functions";
-import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Search, ExternalLink } from "lucide-react";
+import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Search, Eye, Download } from "lucide-react";
 
 export const Route = createFileRoute("/files")({
   head: () => ({ meta: [{ title: "Dosyalar — IDM ERP" }] }),
@@ -67,14 +67,21 @@ function FilesPage() {
   }, [all, q, selectedCo]);
 
   const byCompany = useMemo(() => {
-    const map = new Map<string, FileRow[]>();
+    const counts = new Map<string, number>();
     for (const f of all) {
       const k = f.company_name || "— Genel —";
-      if (!map.has(k)) map.set(k, []);
-      map.get(k)!.push(f);
+      counts.set(k, (counts.get(k) || 0) + 1);
     }
-    return Array.from(map.entries()).sort();
-  }, [all]);
+    // Tüm firmaları (dosyası olmasa da) sol ağaçta göster
+    const fromCompanies = ((companies as Array<{ name: string }>) || []).map((c) => c.name).filter(Boolean);
+    const names = new Set<string>(fromCompanies);
+    for (const k of counts.keys()) names.add(k);
+    const list = Array.from(names).sort((a, b) => a.localeCompare(b, "tr"));
+    // "— Genel —" en üstte
+    const general = "— Genel —";
+    const ordered = [general, ...list.filter((n) => n !== general)];
+    return ordered.map((name) => [name, counts.get(name) || 0] as const);
+  }, [all, companies]);
 
   return (
     <AppShell>
@@ -83,7 +90,7 @@ function FilesPage() {
           <div className="grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary"><FilesIcon className="h-5 w-5" /></div>
           <div>
             <h1 className="text-xl font-semibold">Dosyalar</h1>
-            <p className="text-sm text-muted-foreground">{all.length} kayıt · {byCompany.length} firma</p>
+            <p className="text-sm text-muted-foreground">{all.length} kayıt · {byCompany.length} klasör</p>
           </div>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
@@ -115,11 +122,11 @@ function FilesPage() {
             className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${selectedCo === "all" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}>
             <Folder className="h-3.5 w-3.5" /> Tümü <span className="ml-auto text-xs text-muted-foreground">{all.length}</span>
           </button>
-          {byCompany.map(([co, items]) => (
+          {byCompany.map(([co, count]) => (
             <button key={co} onClick={() => setSelectedCo(co)}
               className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${selectedCo === co ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}>
               <Folder className="h-3.5 w-3.5" /> <span className="truncate">{co}</span>
-              <span className="ml-auto text-xs text-muted-foreground">{items.length}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{count}</span>
             </button>
           ))}
         </aside>
@@ -150,7 +157,6 @@ function FilesPage() {
                       <div className="flex items-center gap-2">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                         {f.url ? <a href={f.url} target="_blank" rel="noreferrer" className="font-medium hover:underline">{f.name}</a> : <span className="font-medium">{f.name}</span>}
-                        {f.url && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
                       </div>
                     </td>
                     <td className="px-3 py-2"><span className="rounded bg-muted px-1.5 py-0.5 text-xs">{f.category}</span></td>
@@ -158,8 +164,17 @@ function FilesPage() {
                     <td className="px-3 py-2 text-muted-foreground">{f.folder || "—"}</td>
                     <td className="px-3 py-2 text-xs">{f.kind || "—"}</td>
                     <td className="px-3 py-2 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Sil?")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      <Button variant="ghost" size="sm" disabled={!f.url} title="Görüntüle"
+                        onClick={() => { if (f.url) window.open(f.url, "_blank", "noopener,noreferrer"); }}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" disabled={!f.url} title="İndir" asChild={!!f.url}>
+                        {f.url
+                          ? <a href={f.url} download={f.name || true} rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
+                          : <Download className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm("Kayıt silinsin mi? (Sunucudaki dosya silinmez)")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                     </td>
                   </tr>
                 ))}
