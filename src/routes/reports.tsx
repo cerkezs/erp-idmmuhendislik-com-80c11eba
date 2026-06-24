@@ -19,7 +19,7 @@ export const Route = createFileRoute("/reports")({
 type Doc = { Id: number; date?: string; total?: number; currency?: string; status?: string; company_name?: string };
 type Exp = { Id: number; date?: string; amount?: number; currency?: string; fx_rate?: number; category?: string };
 type Mov = { Id: number; date?: string; type?: string; amount?: number; currency?: string; fx_rate?: number };
-type Prod = { Id: number; date?: string; status?: string; total_cost?: number };
+type Prod = { Id: number; start_date?: string; status?: string; total_cost?: number };
 
 function toTRY(amount: number, currency?: string, fx?: number) {
   if (!currency || currency === "TRY") return amount;
