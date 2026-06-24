@@ -122,11 +122,11 @@ function FilesPage() {
             className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${selectedCo === "all" ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}>
             <Folder className="h-3.5 w-3.5" /> Tümü <span className="ml-auto text-xs text-muted-foreground">{all.length}</span>
           </button>
-          {byCompany.map(([co, items]) => (
+          {byCompany.map(([co, count]) => (
             <button key={co} onClick={() => setSelectedCo(co)}
               className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${selectedCo === co ? "bg-primary/10 text-primary" : "hover:bg-muted"}`}>
               <Folder className="h-3.5 w-3.5" /> <span className="truncate">{co}</span>
-              <span className="ml-auto text-xs text-muted-foreground">{items.length}</span>
+              <span className="ml-auto text-xs text-muted-foreground">{count}</span>
             </button>
           ))}
         </aside>
