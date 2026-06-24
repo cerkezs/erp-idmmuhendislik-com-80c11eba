@@ -128,7 +128,7 @@ function ProductsPage() {
               <tr key={p.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 text-muted-foreground">{p.code || "—"}</td>
                 <td className="px-3 py-2 font-medium">{p.name || "—"}</td>
-                <td className="px-3 py-2 text-right">{(p.price ?? 0).toLocaleString("tr-TR")} {p.currency || "TRY"}</td>
+                <td className="px-3 py-2 text-right">{(p.price ?? 0).toLocaleString("tr-TR")} {currencySymbol[p.currency || "TRY"] || p.currency || "TRY"}</td>
                 <td className="px-3 py-2 text-right">{p.vat_rate ?? 0}</td>
                 <td className="px-3 py-2 text-right">{p.stock ?? 0}</td>
                 <td className="px-3 py-2 text-muted-foreground">{p.unit || "—"}</td>
