@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getServerHealth } from "@/lib/system.functions";
 import { Server, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/settings/sunucu")({
+export const Route = createFileRoute("/settings_/sunucu")({
   head: () => ({ meta: [{ title: "Sunucu Durumu — Ayarlar" }] }),
   component: SunucuPage,
 });
