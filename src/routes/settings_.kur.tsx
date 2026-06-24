@@ -10,7 +10,7 @@ import { getRates } from "@/lib/rates.functions";
 import { listKurLog, createKurLog, deleteKurLog } from "@/lib/nocodb.functions";
 import { RefreshCw, Plus, Trash2, Loader2, DownloadCloud } from "lucide-react";
 
-export const Route = createFileRoute("/settings/kur")({
+export const Route = createFileRoute("/settings_/kur")({
   head: () => ({ meta: [{ title: "Döviz Kurları — Ayarlar" }] }),
   component: KurPage,
 });
