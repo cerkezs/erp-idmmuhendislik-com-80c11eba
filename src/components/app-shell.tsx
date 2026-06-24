@@ -101,10 +101,18 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 function TopBar({ onMenu }: { onMenu: () => void }) {
-  // Statik placeholder kurlar — gerçek TCMB bağlantısı 18. adımda gelecek
-  const usd = "32.45";
-  const eur = "35.10";
-  const last = "16:00";
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ["tcmb-rates"],
+    queryFn: () => getRates(),
+    staleTime: 1000 * 60 * 30,
+    refetchInterval: 1000 * 60 * 60,
+  });
+
+  const fmt = (n?: number) => (n && n > 0 ? n.toFixed(4) : "—");
+  const usd = fmt(data?.usd);
+  const eur = fmt(data?.eur);
+  const last = data?.time ?? "—";
+  const label = data?.source === "tcmb" ? "TCMB" : "—";
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-3 backdrop-blur sm:px-6">
@@ -125,11 +133,16 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
           <span className="tabular-nums">{eur} ₺</span>
           <span className="text-muted-foreground">·</span>
           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
-            TCMB
+            {label}
           </span>
           <span className="text-muted-foreground">{last}</span>
-          <button className="ml-1 text-muted-foreground hover:text-foreground" title="Kurları yenile">
-            <RefreshCw className="h-3.5 w-3.5" />
+          <button
+            className="ml-1 text-muted-foreground hover:text-foreground disabled:opacity-50"
+            title="Kurları yenile"
+            onClick={() => refetch()}
+            disabled={isFetching}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
         {/* Mobil özet */}
