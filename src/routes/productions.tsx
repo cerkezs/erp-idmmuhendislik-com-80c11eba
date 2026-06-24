@@ -125,7 +125,102 @@ function ProductionsPage() {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
+  const [activeFilters, setActiveFilters] = useState<Filters>(emptyFilters("start_date", "desc"));
+  const [doneFilters, setDoneFilters] = useState<Filters>(emptyFilters("end_date" as SortKey === "end_date" ? "start_date" : "start_date", "desc"));
+  const [doneOpen, setDoneOpen] = useState(false);
+
   const rows = (data || []) as Production[];
+  const activeRows = rows.filter((r) => (r.status || "") !== "Tamamlandı");
+  const doneRows = rows.filter((r) => (r.status || "") === "Tamamlandı");
+
+  const filteredActive = applyFilters(activeRows, activeFilters);
+  const filteredDone = applyFilters(doneRows, doneFilters);
+
+  const companyNames = Array.from(new Set(rows.map((r) => r.company_name).filter(Boolean) as string[])).sort();
+
+  const toggleExpand = (id: number) => {
+    const s = new Set(expanded);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    setExpanded(s);
+  };
+
+  const renderRow = (p: Production) => {
+    const isOpen = expanded.has(p.Id);
+    const style = STATUS_STYLE[p.status || ""] || { row: "", badge: "bg-muted" };
+    return (
+      <Fragment key={p.Id}>
+        <tr className={`border-t border-border hover:bg-muted/20 ${style.row}`}>
+          <td className="pl-2">
+            <button onClick={() => toggleExpand(p.Id)}>
+              {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          </td>
+          <td className="px-3 py-2 font-medium">{p.number || `#${p.Id}`}</td>
+          <td className="px-3 py-2">{p.company_name || "—"}</td>
+          <td className="px-3 py-2">{p.product_name || "—"}</td>
+          <td className="px-3 py-2 text-right">{p.qty ?? 0}</td>
+          <td className="px-3 py-2 text-muted-foreground">{p.start_date || "—"}</td>
+          <td className="px-3 py-2">
+            <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}>{p.status || "—"}</span>
+          </td>
+          <td className="px-3 py-2 text-right tabular-nums">{(p.total_cost ?? 0).toLocaleString("tr-TR")} ₺</td>
+          <td className="px-3 py-2 text-right">
+            <Button variant="ghost" size="sm" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+            <Button variant="ghost" size="sm" onClick={() => { if (confirm("Emir silinsin mi?")) deleteMut.mutate(p.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+          </td>
+        </tr>
+        {isOpen && (
+          <tr className="bg-muted/20">
+            <td></td>
+            <td colSpan={8} className="px-3 py-3">
+              <StagesPanel productionId={p.Id} currentTotal={p.total_cost || 0} companies={(companies as Array<{ Id: number; name: string }>) || []} onTotalChange={(t) => {
+                if (Math.abs((p.total_cost || 0) - t) > 0.01) updateMut.mutate({ id: p.Id, patch: { total_cost: t } });
+              }} />
+            </td>
+          </tr>
+        )}
+      </Fragment>
+    );
+  };
+
+  const SortHeader = ({ label, k, filters, setFilters, align = "left" }: {
+    label: string; k: SortKey; filters: Filters; setFilters: (f: Filters) => void; align?: "left" | "right";
+  }) => {
+    const active = filters.sortKey === k;
+    const Icon = !active ? ArrowUpDown : filters.sortDir === "asc" ? ArrowUp : ArrowDown;
+    return (
+      <th className={`px-3 py-2 ${align === "right" ? "text-right" : "text-left"}`}>
+        <button
+          className="inline-flex items-center gap-1 hover:text-foreground"
+          onClick={() => setFilters({ ...filters, sortKey: k, sortDir: active && filters.sortDir === "asc" ? "desc" : "asc" })}
+        >
+          {label} <Icon className="h-3 w-3" />
+        </button>
+      </th>
+    );
+  };
+
+  const renderTable = (list: Production[], filters: Filters, setFilters: (f: Filters) => void, emptyText: string) => (
+    <table className="w-full text-sm">
+      <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+        <tr>
+          <th className="w-8"></th>
+          <SortHeader label="No" k="number" filters={filters} setFilters={setFilters} />
+          <SortHeader label="Firma" k="company_name" filters={filters} setFilters={setFilters} />
+          <th className="px-3 py-2 text-left">Ürün</th>
+          <SortHeader label="Miktar" k="qty" filters={filters} setFilters={setFilters} align="right" />
+          <SortHeader label="Başlangıç" k="start_date" filters={filters} setFilters={setFilters} />
+          <th className="px-3 py-2 text-left">Durum</th>
+          <SortHeader label="Maliyet" k="total_cost" filters={filters} setFilters={setFilters} align="right" />
+          <th className="px-3 py-2 text-right">İşlem</th>
+        </tr>
+      </thead>
+      <tbody>
+        {list.length === 0 && <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">{emptyText}</td></tr>}
+        {list.map(renderRow)}
+      </tbody>
+    </table>
+  );
 
   return (
     <AppShell>
@@ -136,7 +231,7 @@ function ProductionsPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold">Üretim Emirleri</h1>
-            <p className="text-sm text-muted-foreground">{rows.length} emir · aşama detayı için satırı genişletin</p>
+            <p className="text-sm text-muted-foreground">{activeRows.length} aktif · {doneRows.length} tamamlandı</p>
           </div>
         </div>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
@@ -170,70 +265,147 @@ function ProductionsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-            <tr>
-              <th className="w-8"></th>
-              <th className="px-3 py-2 text-left">No</th>
-              <th className="px-3 py-2 text-left">Firma</th>
-              <th className="px-3 py-2 text-left">Ürün</th>
-              <th className="px-3 py-2 text-right">Miktar</th>
-              <th className="px-3 py-2 text-left">Başlangıç</th>
-              <th className="px-3 py-2 text-left">Durum</th>
-              <th className="px-3 py-2 text-right">Maliyet</th>
-              <th className="px-3 py-2 text-right">İşlem</th>
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading && <tr><td colSpan={9} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>}
-            {!isLoading && rows.length === 0 && <tr><td colSpan={9} className="px-3 py-10 text-center text-muted-foreground">Henüz üretim emri yok.</td></tr>}
-            {rows.map((p) => {
-              const isOpen = expanded.has(p.Id);
-              return (
-                <Fragment key={p.Id}>
-                  <tr className="border-t border-border hover:bg-muted/20">
-                    <td className="pl-2">
-                      <button onClick={() => {
-                        const s = new Set(expanded);
-                        if (s.has(p.Id)) s.delete(p.Id); else s.add(p.Id);
-                        setExpanded(s);
-                      }}>
-                        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      </button>
-                    </td>
-                    <td className="px-3 py-2 font-medium">{p.number || `#${p.Id}`}</td>
-                    <td className="px-3 py-2">{p.company_name || "—"}</td>
-                    <td className="px-3 py-2">{p.product_name || "—"}</td>
-                    <td className="px-3 py-2 text-right">{p.qty ?? 0}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{p.start_date || "—"}</td>
-                    <td className="px-3 py-2">
-                      <span className="inline-flex items-center rounded bg-muted px-2 py-0.5 text-xs">{p.status || "—"}</span>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{(p.total_cost ?? 0).toLocaleString("tr-TR")} ₺</td>
-                    <td className="px-3 py-2 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Emir silinsin mi?")) deleteMut.mutate(p.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                    </td>
-                  </tr>
-                  {isOpen && (
-                    <tr className="bg-muted/20">
-                      <td></td>
-                      <td colSpan={8} className="px-3 py-3">
-                        <StagesPanel productionId={p.Id} currentTotal={p.total_cost || 0} companies={(companies as Array<{ Id: number; name: string }>) || []} onTotalChange={(t) => {
-                          if (Math.abs((p.total_cost || 0) - t) > 0.01) updateMut.mutate({ id: p.Id, patch: { total_cost: t } });
-                        }} />
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
-              );
+      {/* Aktif emirler */}
+      <section className="mb-6">
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Aktif Emirler <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs">{filteredActive.length}/{activeRows.length}</span>
+          </h2>
+        </div>
+        <ListToolbar
+          filters={activeFilters}
+          setFilters={setActiveFilters}
+          companies={companyNames}
+          statusOptions={STATUS.filter((s) => s !== "Tamamlandı")}
+        />
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {isLoading
+            ? <div className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+            : renderTable(filteredActive, activeFilters, setActiveFilters, activeRows.length === 0 ? "Henüz üretim emri yok." : "Filtreyle eşleşen emir yok.")}
+        </div>
+      </section>
 
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* Tamamlanan emirler */}
+      <section>
+        <button
+          onClick={() => setDoneOpen((v) => !v)}
+          className="mb-2 flex w-full items-center justify-between rounded-md px-1 py-1 text-left hover:bg-muted/30"
+        >
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground inline-flex items-center gap-2">
+            {doneOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            Tamamlanan Emirler
+            <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">{doneRows.length}</span>
+          </h2>
+        </button>
+        {doneOpen && (
+          <>
+            <ListToolbar
+              filters={doneFilters}
+              setFilters={setDoneFilters}
+              companies={companyNames}
+              statusOptions={[]}
+            />
+            <div className="overflow-hidden rounded-lg border border-border bg-card">
+              {renderTable(filteredDone, doneFilters, setDoneFilters, doneRows.length === 0 ? "Henüz tamamlanan emir yok." : "Filtreyle eşleşen emir yok.")}
+            </div>
+          </>
+        )}
+      </section>
     </AppShell>
+  );
+}
+
+function ListToolbar({ filters, setFilters, companies, statusOptions }: {
+  filters: Filters;
+  setFilters: (f: Filters) => void;
+  companies: string[];
+  statusOptions: string[];
+}) {
+  const count = activeFilterCount(filters, statusOptions.length > 0);
+  return (
+    <div className="mb-2 rounded-lg border border-border bg-card p-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[200px] flex-1">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={filters.q}
+            onChange={(e) => setFilters({ ...filters, q: e.target.value })}
+            placeholder="No, firma, ürün, not…"
+            className="h-9 pl-7"
+          />
+        </div>
+        <select
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={filters.company}
+          onChange={(e) => setFilters({ ...filters, company: e.target.value })}
+        >
+          <option value="">Tüm firmalar</option>
+          {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <Input
+          type="date"
+          value={filters.from}
+          onChange={(e) => setFilters({ ...filters, from: e.target.value })}
+          className="h-9 w-[140px]"
+          title="Başlangıç (şundan)"
+        />
+        <Input
+          type="date"
+          value={filters.to}
+          onChange={(e) => setFilters({ ...filters, to: e.target.value })}
+          className="h-9 w-[140px]"
+          title="Başlangıç (şuna)"
+        />
+        <select
+          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+          value={`${filters.sortKey}:${filters.sortDir}`}
+          onChange={(e) => {
+            const [k, d] = e.target.value.split(":") as [SortKey, SortDir];
+            setFilters({ ...filters, sortKey: k, sortDir: d });
+          }}
+        >
+          <option value="start_date:desc">Tarih (yeni→eski)</option>
+          <option value="start_date:asc">Tarih (eski→yeni)</option>
+          <option value="number:asc">Emir No (A→Z)</option>
+          <option value="number:desc">Emir No (Z→A)</option>
+          <option value="company_name:asc">Firma (A→Z)</option>
+          <option value="total_cost:desc">Maliyet (yüksek→düşük)</option>
+          <option value="total_cost:asc">Maliyet (düşük→yüksek)</option>
+          <option value="qty:desc">Miktar (yüksek→düşük)</option>
+        </select>
+        {count > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={() => setFilters({ ...emptyFilters(filters.sortKey, filters.sortDir) })}
+          >
+            <X className="mr-1 h-3.5 w-3.5" /> Temizle ({count})
+          </Button>
+        )}
+      </div>
+      {statusOptions.length > 0 && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Durum:</span>
+          {statusOptions.map((s) => {
+            const on = filters.statuses.includes(s);
+            const sty = STATUS_STYLE[s]?.badge || "bg-muted";
+            return (
+              <button
+                key={s}
+                onClick={() => setFilters({
+                  ...filters,
+                  statuses: on ? filters.statuses.filter((x) => x !== s) : [...filters.statuses, s],
+                })}
+                className={`rounded px-2 py-0.5 text-xs transition ${on ? sty : "bg-muted/40 text-muted-foreground hover:bg-muted"}`}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
