@@ -190,7 +190,16 @@ function ProductForm({ initial, onSubmit, submitting }: {
           </div>
           <div className="grid gap-1.5">
             <Label>Döviz</Label>
-            <Input value={vals.currency || "TRY"} onChange={(e) => set("currency", e.target.value)} />
+            <Select value={vals.currency || "TRY"} onValueChange={(v) => set("currency", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Döviz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="TRY">₺ TRY</SelectItem>
+                <SelectItem value="USD">$ USD</SelectItem>
+                <SelectItem value="EUR">€ EUR</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5">
             <Label>KDV %</Label>
