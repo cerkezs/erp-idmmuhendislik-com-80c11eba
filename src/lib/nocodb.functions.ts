@@ -142,6 +142,65 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "okundu", uidt: "Checkbox" },
     { title: "kullanici", uidt: "SingleLineText" },
   ],
+  uretim_emirleri: [
+    { title: "numara", uidt: "SingleLineText" },
+    { title: "firma_id", uidt: "Number" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+    { title: "urun_id", uidt: "Number" },
+    { title: "urun_adi", uidt: "SingleLineText" },
+    { title: "miktar", uidt: "Decimal" },
+    { title: "baslama", uidt: "Date" },
+    { title: "bitis", uidt: "Date" },
+    { title: "durum", uidt: "SingleLineText" },
+    { title: "toplam_maliyet", uidt: "Decimal" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  uretim_asamalari: [
+    { title: "emir_id", uidt: "Number" },
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "firma_id", uidt: "Number" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+    { title: "maliyet", uidt: "Decimal" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "baslama", uidt: "Date" },
+    { title: "bitis", uidt: "Date" },
+    { title: "durum", uidt: "SingleLineText" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  gorevler: [
+    { title: "tarih", uidt: "DateTime" },
+    { title: "baslik", uidt: "SingleLineText" },
+    { title: "aciklama", uidt: "LongText" },
+    { title: "durum", uidt: "SingleLineText" },
+    { title: "oncelik", uidt: "SingleLineText" },
+    { title: "atanan", uidt: "SingleLineText" },
+    { title: "son_tarih", uidt: "Date" },
+    { title: "ilgili_tur", uidt: "SingleLineText" },
+    { title: "ilgili_id", uidt: "Number" },
+  ],
+  dosyalar: [
+    { title: "tarih", uidt: "DateTime" },
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "kategori", uidt: "SingleLineText" },
+    { title: "firma_id", uidt: "Number" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+    { title: "klasor", uidt: "SingleLineText" },
+    { title: "url", uidt: "LongText" },
+    { title: "boyut", uidt: "SingleLineText" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  mail_log: [
+    { title: "tarih", uidt: "DateTime" },
+    { title: "kime", uidt: "SingleLineText" },
+    { title: "kimden", uidt: "SingleLineText" },
+    { title: "konu", uidt: "SingleLineText" },
+    { title: "govde", uidt: "LongText" },
+    { title: "durum", uidt: "SingleLineText" },
+    { title: "hata", uidt: "LongText" },
+    { title: "ek_url", uidt: "LongText" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+  ],
 };
 
 
@@ -827,3 +886,250 @@ export const markNotificationRead = createServerFn({ method: "POST" })
 export const deleteNotification = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("bildirimler", data.id));
+
+// ---------- Üretim Emirleri ----------
+const URETIM_MAP = {
+  number: "numara",
+  company_id: "firma_id",
+  company_name: "firma_adi",
+  product_id: "urun_id",
+  product_name: "urun_adi",
+  qty: "miktar",
+  start_date: "baslama",
+  end_date: "bitis",
+  status: "durum",
+  total_cost: "toplam_maliyet",
+  notes: "notlar",
+} as const;
+
+const ProductionInput = z.object({
+  number: z.string().optional().default(""),
+  company_id: z.number().nullable().optional(),
+  company_name: z.string().optional().default(""),
+  product_id: z.number().nullable().optional(),
+  product_name: z.string().optional().default(""),
+  qty: z.number().optional().default(0),
+  start_date: z.string().optional().default(""),
+  end_date: z.string().optional().default(""),
+  status: z.string().optional().default("Planlandı"),
+  total_cost: z.number().optional().default(0),
+  notes: z.string().optional().default(""),
+});
+
+export const listProductions = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("uretim_emirleri");
+    return rows.map((r) => fromTr(r, URETIM_MAP));
+  },
+);
+export const createProduction = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => ProductionInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("uretim_emirleri", toTr(data, URETIM_MAP)), URETIM_MAP),
+  );
+export const updateProduction = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: ProductionInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("uretim_emirleri", data.id, toTr(data.patch, URETIM_MAP)), URETIM_MAP),
+  );
+export const deleteProduction = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("uretim_emirleri", data.id));
+
+// ---------- Üretim Aşamaları ----------
+const ASAMA_MAP = {
+  production_id: "emir_id",
+  name: "ad",
+  company_id: "firma_id",
+  company_name: "firma_adi",
+  cost: "maliyet",
+  currency: "para_birimi",
+  start_date: "baslama",
+  end_date: "bitis",
+  status: "durum",
+  notes: "notlar",
+} as const;
+
+const StageInput = z.object({
+  production_id: z.number(),
+  name: z.string().min(1, "Aşama adı zorunlu"),
+  company_id: z.number().nullable().optional(),
+  company_name: z.string().optional().default(""),
+  cost: z.number().optional().default(0),
+  currency: z.string().optional().default("TRY"),
+  start_date: z.string().optional().default(""),
+  end_date: z.string().optional().default(""),
+  status: z.string().optional().default("Beklemede"),
+  notes: z.string().optional().default(""),
+});
+
+export const listStages = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ production_id: z.number() }).parse(d))
+  .handler(async ({ data }): Promise<Record_[]> => {
+    const tableId = await getTableId("uretim_asamalari");
+    const where = encodeURIComponent(`(emir_id,eq,${data.production_id})`);
+    const res = await nc<{ list: Record_[] }>(
+      `/api/v2/tables/${tableId}/records?where=${where}&limit=500`,
+    );
+    return (res.list || []).map((r) => fromTr(r, ASAMA_MAP));
+  });
+export const createStage = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => StageInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("uretim_asamalari", toTr(data, ASAMA_MAP)), ASAMA_MAP),
+  );
+export const updateStage = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: StageInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("uretim_asamalari", data.id, toTr(data.patch, ASAMA_MAP)), ASAMA_MAP),
+  );
+export const deleteStage = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("uretim_asamalari", data.id));
+
+// ---------- Görevler ----------
+const GOREV_MAP = {
+  date: "tarih",
+  title: "baslik",
+  description: "aciklama",
+  status: "durum",
+  priority: "oncelik",
+  assignee: "atanan",
+  due_date: "son_tarih",
+  related_type: "ilgili_tur",
+  related_id: "ilgili_id",
+} as const;
+
+const TaskInput = z.object({
+  date: z.string().optional().default(""),
+  title: z.string().min(1, "Başlık zorunlu"),
+  description: z.string().optional().default(""),
+  status: z.string().optional().default("Açık"),
+  priority: z.string().optional().default("Normal"),
+  assignee: z.string().optional().default(""),
+  due_date: z.string().optional().default(""),
+  related_type: z.string().optional().default(""),
+  related_id: z.number().nullable().optional(),
+});
+
+export const listTasks = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("gorevler", 500);
+    return rows.map((r) => fromTr(r, GOREV_MAP));
+  },
+);
+export const createTask = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => TaskInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("gorevler", toTr(data, GOREV_MAP)), GOREV_MAP),
+  );
+export const updateTask = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: TaskInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("gorevler", data.id, toTr(data.patch, GOREV_MAP)), GOREV_MAP),
+  );
+export const deleteTask = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("gorevler", data.id));
+
+// ---------- Dosyalar ----------
+const DOSYA_MAP = {
+  date: "tarih",
+  name: "ad",
+  category: "kategori",
+  company_id: "firma_id",
+  company_name: "firma_adi",
+  folder: "klasor",
+  url: "url",
+  size: "boyut",
+  kind: "tur",
+  notes: "notlar",
+} as const;
+
+const FileInput = z.object({
+  date: z.string().optional().default(""),
+  name: z.string().min(1, "Ad zorunlu"),
+  category: z.string().optional().default("Genel"),
+  company_id: z.number().nullable().optional(),
+  company_name: z.string().optional().default(""),
+  folder: z.string().optional().default(""),
+  url: z.string().optional().default(""),
+  size: z.string().optional().default(""),
+  kind: z.string().optional().default(""),
+  notes: z.string().optional().default(""),
+});
+
+export const listFiles = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("dosyalar", 500);
+    return rows.map((r) => fromTr(r, DOSYA_MAP));
+  },
+);
+export const createFile = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => FileInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("dosyalar", toTr(data, DOSYA_MAP)), DOSYA_MAP),
+  );
+export const updateFile = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: FileInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("dosyalar", data.id, toTr(data.patch, DOSYA_MAP)), DOSYA_MAP),
+  );
+export const deleteFile = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("dosyalar", data.id));
+
+// ---------- Mail Log ----------
+const MAIL_MAP = {
+  date: "tarih",
+  to: "kime",
+  from: "kimden",
+  subject: "konu",
+  body: "govde",
+  status: "durum",
+  error: "hata",
+  attachment_url: "ek_url",
+  company_name: "firma_adi",
+} as const;
+
+const MailInput = z.object({
+  date: z.string().optional().default(""),
+  to: z.string().min(1, "Alıcı zorunlu"),
+  from: z.string().optional().default(""),
+  subject: z.string().optional().default(""),
+  body: z.string().optional().default(""),
+  status: z.string().optional().default("Taslak"),
+  error: z.string().optional().default(""),
+  attachment_url: z.string().optional().default(""),
+  company_name: z.string().optional().default(""),
+});
+
+export const listMails = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("mail_log", 500);
+    return rows.map((r) => fromTr(r, MAIL_MAP));
+  },
+);
+export const createMail = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => MailInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("mail_log", toTr(data, MAIL_MAP)), MAIL_MAP),
+  );
+export const updateMail = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: MailInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("mail_log", data.id, toTr(data.patch, MAIL_MAP)), MAIL_MAP),
+  );
+export const deleteMail = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("mail_log", data.id));
