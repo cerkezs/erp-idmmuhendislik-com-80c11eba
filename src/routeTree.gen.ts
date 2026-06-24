@@ -24,6 +24,7 @@ import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -100,6 +101,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBackupRoute = ApiBackupRouteImport.update({
+  id: '/api/backup',
+  path: '/api/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/api/backup': typeof ApiBackupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/api/backup': typeof ApiBackupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/api/backup': typeof ApiBackupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/api/backup'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/api/backup'
   id:
     | '__root__'
     | '/'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/api/backup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -223,6 +235,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
+  ApiBackupRoute: typeof ApiBackupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -332,6 +345,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/backup': {
+      id: '/api/backup'
+      path: '/api/backup'
+      fullPath: '/api/backup'
+      preLoaderRoute: typeof ApiBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -351,6 +371,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
+  ApiBackupRoute: ApiBackupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
