@@ -24,7 +24,7 @@ import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsBackupRouteImport } from './routes/settings.backup'
+import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
 const SetupRoute = SetupRouteImport.update({
@@ -103,9 +103,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsBackupRoute = SettingsBackupRouteImport.update({
-  id: '/backup',
-  path: '/backup',
-  getParentRoute: () => SettingsRoute,
+  id: '/settings_/backup',
+  path: '/settings/backup',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBackupRoute = ApiBackupRouteImport.update({
   id: '/api/backup',
@@ -127,7 +127,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
@@ -146,7 +146,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
@@ -166,10 +166,10 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/quotes': typeof QuotesRoute
   '/reports': typeof ReportsRoute
-  '/settings': typeof SettingsRouteWithChildren
+  '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
-  '/settings/backup': typeof SettingsBackupRoute
+  '/settings_/backup': typeof SettingsBackupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,7 +228,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/api/backup'
-    | '/settings/backup'
+    | '/settings_/backup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -245,9 +245,10 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   QuotesRoute: typeof QuotesRoute
   ReportsRoute: typeof ReportsRoute
-  SettingsRoute: typeof SettingsRouteWithChildren
+  SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   ApiBackupRoute: typeof ApiBackupRoute
+  SettingsBackupRoute: typeof SettingsBackupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -357,12 +358,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/backup': {
-      id: '/settings/backup'
-      path: '/backup'
+    '/settings_/backup': {
+      id: '/settings_/backup'
+      path: '/settings/backup'
       fullPath: '/settings/backup'
       preLoaderRoute: typeof SettingsBackupRouteImport
-      parentRoute: typeof SettingsRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/backup': {
       id: '/api/backup'
@@ -373,18 +374,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface SettingsRouteChildren {
-  SettingsBackupRoute: typeof SettingsBackupRoute
-}
-
-const SettingsRouteChildren: SettingsRouteChildren = {
-  SettingsBackupRoute: SettingsBackupRoute,
-}
-
-const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
-  SettingsRouteChildren,
-)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -400,9 +389,10 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   QuotesRoute: QuotesRoute,
   ReportsRoute: ReportsRoute,
-  SettingsRoute: SettingsRouteWithChildren,
+  SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   ApiBackupRoute: ApiBackupRoute,
+  SettingsBackupRoute: SettingsBackupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

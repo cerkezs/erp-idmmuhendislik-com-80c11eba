@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Loader2, Archive, AlertCircle, ArrowLeft } from "lucide-react";
 
-export const Route = createFileRoute("/settings/backup")({
+export const Route = createFileRoute("/settings_/backup")({
   head: () => ({ meta: [{ title: "Yedekleme — IDM ERP" }] }),
   component: BackupPage,
 });
