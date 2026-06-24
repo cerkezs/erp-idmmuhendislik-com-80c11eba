@@ -294,3 +294,301 @@ export const updateCompany = createServerFn({ method: "POST" })
 export const deleteCompany = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("firmalar", data.id));
+
+// ---------- Ürünler ----------
+const URUN_MAP = {
+  code: "kod",
+  name: "ad",
+  unit: "birim",
+  price: "fiyat",
+  currency: "para_birimi",
+  vat_rate: "kdv_orani",
+  stock: "stok",
+  notes: "notlar",
+} as const;
+
+const ProductInput = z.object({
+  code: z.string().optional().default(""),
+  name: z.string().min(1, "Ad zorunlu"),
+  unit: z.string().optional().default("adet"),
+  price: z.number().optional().default(0),
+  currency: z.string().optional().default("TRY"),
+  vat_rate: z.number().optional().default(20),
+  stock: z.number().optional().default(0),
+  notes: z.string().optional().default(""),
+});
+
+export const listProducts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("urunler");
+    return rows.map((r) => fromTr(r, URUN_MAP));
+  },
+);
+
+export const createProduct = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => ProductInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("urunler", toTr(data, URUN_MAP)), URUN_MAP),
+  );
+
+export const updateProduct = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: ProductInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("urunler", data.id, toTr(data.patch, URUN_MAP)), URUN_MAP),
+  );
+
+export const deleteProduct = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("urunler", data.id));
+
+// ---------- Teklif / Fatura ortak ----------
+const BELGE_MAP = {
+  number: "numara",
+  company_id: "firma_id",
+  company_name: "firma_adi",
+  date: "tarih",
+  status: "durum",
+  currency: "para_birimi",
+  subtotal: "ara_toplam",
+  vat_total: "kdv_toplam",
+  total: "genel_toplam",
+  notes: "notlar",
+} as const;
+
+const TEKLIF_MAP = { ...BELGE_MAP, valid_until: "gecerlilik" } as const;
+const FATURA_MAP = { ...BELGE_MAP, due_date: "vade_tarihi" } as const;
+
+const KALEM_MAP = {
+  product_id: "urun_id",
+  description: "aciklama",
+  qty: "miktar",
+  unit_price: "birim_fiyat",
+  vat_rate: "kdv_orani",
+  line_total: "satir_toplam",
+} as const;
+
+const TEKLIF_KALEM_MAP = { ...KALEM_MAP, quote_id: "teklif_id" } as const;
+const FATURA_KALEM_MAP = { ...KALEM_MAP, invoice_id: "fatura_id" } as const;
+
+const ItemInput = z.object({
+  product_id: z.number().nullable().optional(),
+  description: z.string().optional().default(""),
+  qty: z.number().default(1),
+  unit_price: z.number().default(0),
+  vat_rate: z.number().default(20),
+});
+
+const QuoteInput = z.object({
+  number: z.string().optional().default(""),
+  company_id: z.number().nullable().optional(),
+  company_name: z.string().optional().default(""),
+  date: z.string().optional().default(""),
+  valid_until: z.string().optional().default(""),
+  status: z.string().optional().default("Taslak"),
+  currency: z.string().optional().default("TRY"),
+  notes: z.string().optional().default(""),
+  items: z.array(ItemInput).default([]),
+});
+
+const InvoiceInput = z.object({
+  number: z.string().optional().default(""),
+  company_id: z.number().nullable().optional(),
+  company_name: z.string().optional().default(""),
+  date: z.string().optional().default(""),
+  due_date: z.string().optional().default(""),
+  status: z.string().optional().default("Taslak"),
+  currency: z.string().optional().default("TRY"),
+  notes: z.string().optional().default(""),
+  items: z.array(ItemInput).default([]),
+});
+
+function computeTotals(items: Array<z.infer<typeof ItemInput>>) {
+  let subtotal = 0;
+  let vat_total = 0;
+  const lines = items.map((it) => {
+    const line = (it.qty || 0) * (it.unit_price || 0);
+    const vat = line * ((it.vat_rate || 0) / 100);
+    subtotal += line;
+    vat_total += vat;
+    return { ...it, line_total: round2(line) };
+  });
+  return { lines, subtotal: round2(subtotal), vat_total: round2(vat_total), total: round2(subtotal + vat_total) };
+}
+function round2(n: number) { return Math.round(n * 100) / 100; }
+
+// Teklifler
+export const listQuotes = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("teklifler");
+    return rows.map((r) => fromTr(r, TEKLIF_MAP));
+  },
+);
+
+export const getQuote = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => {
+    const id = await getTableId("teklifler");
+    const row = await nc<Record_>(`/api/v2/tables/${id}/records/${data.id}`);
+    const itemsTable = await getTableId("teklif_kalemleri");
+    const where = encodeURIComponent(`(teklif_id,eq,${data.id})`);
+    const items = await nc<{ list: Record_[] }>(
+      `/api/v2/tables/${itemsTable}/records?where=${where}&limit=500`,
+    );
+    return {
+      ...fromTr(row, TEKLIF_MAP),
+      items: (items.list || []).map((r) => fromTr(r, TEKLIF_KALEM_MAP)),
+    };
+  });
+
+async function replaceItems(
+  itemsTable: string,
+  parentField: string,
+  parentId: number,
+  items: Array<z.infer<typeof ItemInput>>,
+  map: Record<string, string>,
+) {
+  // delete existing
+  const where = encodeURIComponent(`(${parentField},eq,${parentId})`);
+  const existing = await nc<{ list: Record_[] }>(
+    `/api/v2/tables/${itemsTable}/records?where=${where}&limit=500`,
+  );
+  for (const r of existing.list || []) {
+    await nc(`/api/v2/tables/${itemsTable}/records`, {
+      method: "DELETE",
+      body: JSON.stringify({ Id: r.Id }),
+    });
+  }
+  for (const it of items) {
+    const line_total = round2((it.qty || 0) * (it.unit_price || 0));
+    const payload = toTr(
+      { ...it, line_total, [parentField === "teklif_id" ? "quote_id" : "invoice_id"]: parentId },
+      map,
+    );
+    await nc(`/api/v2/tables/${itemsTable}/records`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+}
+
+export const saveQuote = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number().nullable().optional(), data: QuoteInput }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { items, ...rest } = data.data;
+    const t = computeTotals(items);
+    const header = toTr(
+      { ...rest, subtotal: t.subtotal, vat_total: t.vat_total, total: t.total },
+      TEKLIF_MAP,
+    );
+    const tableId = await getTableId("teklifler");
+    let parentId: number;
+    if (data.id) {
+      await nc(`/api/v2/tables/${tableId}/records`, {
+        method: "PATCH",
+        body: JSON.stringify({ Id: data.id, ...header }),
+      });
+      parentId = data.id;
+    } else {
+      const created = await nc<Record_>(`/api/v2/tables/${tableId}/records`, {
+        method: "POST",
+        body: JSON.stringify(header),
+      });
+      parentId = created.Id as number;
+    }
+    const kalemTable = await getTableId("teklif_kalemleri");
+    await replaceItems(kalemTable, "teklif_id", parentId, items, TEKLIF_KALEM_MAP);
+    return { id: parentId, ...t };
+  });
+
+export const deleteQuote = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => {
+    const kalemTable = await getTableId("teklif_kalemleri");
+    const where = encodeURIComponent(`(teklif_id,eq,${data.id})`);
+    const existing = await nc<{ list: Record_[] }>(
+      `/api/v2/tables/${kalemTable}/records?where=${where}&limit=500`,
+    );
+    for (const r of existing.list || []) {
+      await nc(`/api/v2/tables/${kalemTable}/records`, {
+        method: "DELETE",
+        body: JSON.stringify({ Id: r.Id }),
+      });
+    }
+    return deleteRecord("teklifler", data.id);
+  });
+
+// Faturalar
+export const listInvoices = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("faturalar");
+    return rows.map((r) => fromTr(r, FATURA_MAP));
+  },
+);
+
+export const getInvoice = createServerFn({ method: "GET" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => {
+    const id = await getTableId("faturalar");
+    const row = await nc<Record_>(`/api/v2/tables/${id}/records/${data.id}`);
+    const itemsTable = await getTableId("fatura_kalemleri");
+    const where = encodeURIComponent(`(fatura_id,eq,${data.id})`);
+    const items = await nc<{ list: Record_[] }>(
+      `/api/v2/tables/${itemsTable}/records?where=${where}&limit=500`,
+    );
+    return {
+      ...fromTr(row, FATURA_MAP),
+      items: (items.list || []).map((r) => fromTr(r, FATURA_KALEM_MAP)),
+    };
+  });
+
+export const saveInvoice = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number().nullable().optional(), data: InvoiceInput }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { items, ...rest } = data.data;
+    const t = computeTotals(items);
+    const header = toTr(
+      { ...rest, subtotal: t.subtotal, vat_total: t.vat_total, total: t.total },
+      FATURA_MAP,
+    );
+    const tableId = await getTableId("faturalar");
+    let parentId: number;
+    if (data.id) {
+      await nc(`/api/v2/tables/${tableId}/records`, {
+        method: "PATCH",
+        body: JSON.stringify({ Id: data.id, ...header }),
+      });
+      parentId = data.id;
+    } else {
+      const created = await nc<Record_>(`/api/v2/tables/${tableId}/records`, {
+        method: "POST",
+        body: JSON.stringify(header),
+      });
+      parentId = created.Id as number;
+    }
+    const kalemTable = await getTableId("fatura_kalemleri");
+    await replaceItems(kalemTable, "fatura_id", parentId, items, FATURA_KALEM_MAP);
+    return { id: parentId, ...t };
+  });
+
+export const deleteInvoice = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => {
+    const kalemTable = await getTableId("fatura_kalemleri");
+    const where = encodeURIComponent(`(fatura_id,eq,${data.id})`);
+    const existing = await nc<{ list: Record_[] }>(
+      `/api/v2/tables/${kalemTable}/records?where=${where}&limit=500`,
+    );
+    for (const r of existing.list || []) {
+      await nc(`/api/v2/tables/${kalemTable}/records`, {
+        method: "DELETE",
+        body: JSON.stringify({ Id: r.Id }),
+      });
+    }
+    return deleteRecord("faturalar", data.id);
+  });
