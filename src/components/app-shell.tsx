@@ -128,11 +128,9 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
 
       <div className="flex flex-1 items-center gap-3 text-xs sm:text-sm">
         <div className="hidden items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 sm:flex">
-          <span className="font-medium">USD</span>
-          <span className="tabular-nums">{usd} ₺</span>
+          <span className="tabular-nums">$ {usd} ₺</span>
           <span className="text-muted-foreground">·</span>
-          <span className="font-medium">EUR</span>
-          <span className="tabular-nums">{eur} ₺</span>
+          <span className="tabular-nums">€ {eur} ₺</span>
           <span className="text-muted-foreground">·</span>
           <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
             {label}
@@ -150,16 +148,10 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         {/* Mobil özet */}
         <div className="flex items-center gap-2 sm:hidden">
           <span className="rounded-md bg-muted px-2 py-1 text-[11px] tabular-nums">
-            USD {usd} · EUR {eur}
+            $ {usd} · € {eur}
           </span>
         </div>
       </div>
-
-      <Button variant="ghost" size="sm" className="gap-1">
-        <span className="hidden sm:inline">Görüntüleme</span>
-        <span className="font-medium">TRY</span>
-        <ChevronDown className="h-3.5 w-3.5" />
-      </Button>
 
       <div className="hidden h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground sm:grid">
         <span className="text-xs font-medium">YK</span>
