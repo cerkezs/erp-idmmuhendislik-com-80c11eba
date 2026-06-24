@@ -1,76 +1,84 @@
-## Firma dosyaları + sistem yedekleme
 
-### 1) Firma kaydedildiğinde Dosyalar'da otomatik klasör
+# Ayarlar'\u0131 Tamamlama + Sunucu Komutlar\u0131
 
-Şu an `Dosyalar` sayfası firmaları, **sadece dosya kaydı olan** firmaları sol ağaçta gösteriyor. Yeni davranış:
+\u0130ki par\u00e7a halinde ilerleyece\u011fiz: (A) uygulama i\u00e7i ayar sayfalar\u0131, (B) senin sunucuda \u00e7al\u0131\u015ft\u0131raca\u011f\u0131n haz\u0131r kom\u0131tlar.
 
-- Sol ağaç `companies` listesinden üretilecek (dosya olmasa da). Her firma için "klasör" satırı görünür.
-- Dosya sayacı her firma için ayrıca hesaplanır (`0` olabilir).
-- Hiçbir veri tabanı kaydı eklenmez (boş klasör = sanal). Bu, ek migration veya yer israfı yapmaz; firma silindiğinde klasör doğal olarak kaybolur.
-- "— Genel —" (firmasız) klasörü en üstte kalır.
-- Bir firma satırına tıklayınca o firmanın bütün dosyaları sağda listelenir (mevcut filtre mantığı).
+---
 
-### 2) Dosya işlemleri (görüntüle / sil / indir)
+## A) Uygulama \u2014 Ayarlar alt sayfalar\u0131
 
-Şu an satırda sadece "düzenle" ve "sil" var, dosya adı `url` varsa yeni sekmede açılıyor. Aşağıdaki değişiklikler:
+T\u00fcm sayfalar `/settings/...` alt\u0131nda a\u00e7\u0131lacak, `settings.tsx` \u00fczerindeki kartlar do\u011fru rotalara y\u00f6nlendirilecek.
 
-- **Görüntüle**: göz ikonu → `url`'yi yeni sekmede açar (PDF/IMG/HTML tarayıcıda önizlenir).
-- **İndir**: download ikonu → `<a href={url} download>` ile direkt indirme tetikler. `url` boşsa buton disabled.
-- **Sil**: zaten var, korunur (kayıt silinir; sunucudaki dosyayı silmez — kullanıcı not bilsin).
-- **Düzenle**: zaten var.
-- URL alanı için form alanı zaten var; "kendi sunucunda" tutulan dosyanın HTTP linkini buraya yapıştırınca tüm aksiyonlar çalışır.
+### 1. Kasa Hesaplar\u0131 \u2014 `/settings/kasa`
+- NocoDB `kasalar` tablosuna ba\u011fl\u0131 CRUD listesi.
+- Alanlar: ad, para birimi (TRY/USD/EUR), a\u00e7\u0131l\u0131\u015f bakiyesi, banka/IBAN, aktif/pasif.
+- Liste + ekle/d\u00fczenle/sil modal\u0131. `ListToolbar` (arama + s\u0131ralama) ile.
 
-> Not: Dosyalar fiziksel olarak sizin sunucunuzda durduğu için "indir/görüntüle" tarayıcı tarafından doğrudan o linke gider — bu en doğru yaklaşım, ek köprü/proxy gerekmez. Kayıt sadece metadata (ad, kategori, firma, link, notlar) tutar.
+### 2. Kategoriler \u2014 `/settings/kategoriler`
+- Yeni NocoDB tablosu: `kategoriler` (alanlar: ad, tip = `gider`|`urun`|`teklif`, renk, aktif).
+- Tek sayfada sekmeli (Gider / \u00dcr\u00fcn / Teklif) liste + ekle/sil.
+- Giderler/\u00fcr\u00fcnler sayfalar\u0131ndaki kategori dropdown'lar\u0131 buradan beslenecek (UI g\u00fcncellemesi).
 
-### 3) Ayarlar > Yedekleme
+### 3. D\u00f6viz Kurlar\u0131 \u2014 `/settings/kur`
+- Mevcut `rates.functions.ts` TCMB yard\u0131mc\u0131s\u0131 kullan\u0131lacak.
+- "Manuel kur giri\u015fi" formu (tarih + USD/EUR de\u011feri) \u2192 `kur_log` tablosuna yaz\u0131l\u0131r.
+- "TCMB'den \u015eimdi \u00c7ek" butonu (server fn).
+- Son 30 g\u00fcnl\u00fck mini tablo + s\u0131ralama.
+- Sunucu cron'u i\u00e7in haz\u0131r endpoint: `/api/public/rates/sync` (HMAC sign).
 
-Yeni sayfa: `src/routes/settings.backup.tsx` (route: `/settings/backup`). Ayarlar grid'inden yeni bir kart ile bağlanır ("Yedekleme").
+### 4. Bildirim T\u00fcrleri \u2014 `/settings/bildirimler`
+- Yeni tablo: `bildirim_ayarlari` (kullanici_id, tur, mail_aktif, push_aktif).
+- T\u00fcrler: vade yakla\u015fan, stok kritik, \u00fcretim gecikti, kasa hareket.
+- Matris UI (sat\u0131r = t\u00fcr, s\u00fctun = kanal) toggle'lar\u0131.
 
-Sayfa UI:
-- Checkbox listesi (bölümler): Firmalar, Ürünler, Teklifler (+ kalemler), Faturalar (+ kalemler), Üretim Emirleri (+ aşamalar), Giderler, Kasa (hesaplar + hareketler), Dosyalar (metadata), Mail Log, Bildirimler.
-- "Tümünü seç / Hiçbiri" tek tıkla.
-- "Firma bazlı kategorize et" checkbox'ı (varsayılan açık): seçili ise ZIP içinde her firma için ayrı klasör + içinde o firmanın CSV'leri; kapalı ise düz CSV (her tablo için bir dosya).
-- Opsiyonel: tarih aralığı (başlangıç/bitiş) — sadece tarih içeren tabloları filtreler.
-- "Yedeği indir" butonu → server function ZIP üretir, indirme tetiklenir.
+### 5. Kullan\u0131c\u0131lar \u2014 `/settings/kullanicilar` (hafif)
+- NocoDB tablosu: `kullanicilar` (ad, email, rol = admin/operator/viewer, aktif). \u015eifreleme yok.
+- CRUD listesi. (Ger\u00e7ek auth ileride Lovable Cloud ile.)
 
-ZIP yapısı (firma bazlı modda):
+### 6. Mail/SMTP \u2014 `/settings/mail`
+- SMTP de\u011ferleri sunucu `.env`'inden gelir (host, port, user, pass, from).
+- Sayfa: mevcut SMTP'yi (mask'l\u0131) g\u00f6r\u00fcnt\u00fcler, "test maili g\u00f6nder" butonu.
+- Server fn: `sendTestMail({to, subject, body})` \u2014 nodemailer ile SMTP \u00fczerinden g\u00f6nderir.
+- "Ortak g\u00f6nderici hesaplar" tablosu (`mail_hesaplari`): isim, from-adres, imza. Teklif/fatura PDF mailinde dropdown.
+
+### 7. Sunucu Durumu \u2014 `/settings/sunucu`
+- Sunucudaki mini health-endpoint'i pollar (a\u015fa\u011f\u0131da B/3).
+- G\u00f6sterir: disk %, RAM %, uptime, NocoDB up/down, son yedek tarihi.
+
+### Yedekleme zaten haz\u0131r \u2192 `/settings/backup` (sadece kart linki d\u00fczeltilecek).
+
+---
+
+## B) Sunucu \u2014 sana yap\u0131\u015ft\u0131r-\u00e7al\u0131\u015ft\u0131r komutlar
+
+Hi\u00e7bir \u015fey \u015fimdi \u00e7al\u0131\u015ft\u0131r\u0131lmayacak; uygulama PR'\u0131 bitince a\u015fa\u011f\u0131dakileri tek tek senin sunucunda \u00e7al\u0131\u015ft\u0131rman i\u00e7in chat'e d\u00f6kece\u011fim:
+
+1. **`.env` g\u00fcncelleme (SMTP)** \u2014 `nano /opt/idm-erp/.env` ile eklenecek sat\u0131rlar: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`. \u00d6rnek bloklar dahil.
+2. **Mini health-API (Node, ~50 sat\u0131r)** \u2014 `/opt/idm-erp/health-api/` alt\u0131na `server.js` + `systemd` unit. `:9099/health` JSON d\u00f6ner (disk/RAM/uptime/NocoDB ping). Token (`HEALTH_TOKEN`) ile korunur.
+3. **Nginx reverse-proxy bloku** \u2014 `health.idmmuhendislik.com` \u2192 `127.0.0.1:9099` (SSL: certbot komutu dahil).
+4. **G\u00fcnl\u00fck yedek cron'u** \u2014 NocoDB veri klas\u00f6r\u00fc + dosya klas\u00f6r\u00fc `rsync` + 7 g\u00fcnl\u00fck retention; `/etc/cron.daily/idm-backup`.
+5. **NocoDB metadata yede\u011fi** \u2014 `docker exec` ile sqlite/postgres dump al\u0131p `/backups/nocodb/` alt\u0131na yazar.
+6. **TCMB kur cron'u** \u2014 her sabah 09:30 \u2192 `curl -H "X-Sign: ..." https://erp.idmmuhendislik.com/api/public/rates/sync`.
+
+Her komut bloku \u015fu \u015fekilde verilecek:
+```text
++++ KOPYALA: /opt/idm-erp/health-api/server.js
+... dosya i\u00e7eri\u011fi ...
++++ \u00c7ALI\u015eTIR:
+mkdir -p /opt/idm-erp/health-api && nano /opt/idm-erp/health-api/server.js
 ```
-idm-erp-backup-2026-06-24.zip
-├── _meta.json                  (sürüm, tarih, içerilen bölümler)
-├── firmalar.csv                (tüm firmalar düz liste)
-├── firmasiz/                   (firma bağı olmayan kayıtlar)
-│   ├── giderler.csv
-│   └── ...
-├── ACME Ltd/                   (her firma için bir klasör; ad slugify edilir)
-│   ├── teklifler.csv
-│   ├── teklif_kalemleri.csv
-│   ├── faturalar.csv
-│   ├── fatura_kalemleri.csv
-│   ├── uretim_emirleri.csv
-│   ├── uretim_asamalari.csv
-│   ├── giderler.csv
-│   ├── dosyalar.csv
-│   └── mail_log.csv
-└── ...
-```
+Sen \u00e7\u0131kt\u0131y\u0131 yap\u0131\u015ft\u0131racaks\u0131n, ben hata varsa d\u00fczeltece\u011fim.
 
-Düz modda: yalnızca tablo başına bir CSV.
+---
 
-### Teknik notlar
+## S\u0131ra
 
-- ZIP üretimi: `fflate` (Workers-uyumlu, salt-JS, küçük) — `bun add fflate`. JSZip de uyumlu ama fflate daha hafif.
-- Yeni server route: `src/routes/api/backup.ts` (POST). Body: seçili bölüm/filtre. NocoDB'den `listRecords` ile çekilir, CSV'ye dönülür (özel karakterler için tırnak/kaçış), fflate ile ZIP, `Response` ile `application/zip` döner.
-- "RAR" tarayıcıda üretilemez; ZIP standartı kullanılıyor (kullanıcı talebi onaylandı).
-- Dosyalar (binary) yedeğe **dahil edilmez** — sadece metadata/URL listesi (`dosyalar.csv`). Fiziksel dosyalar zaten sizin sunucunuzda; oraya ayrıca rsync/backup önerilir (yedeğin içine sadece URL'ler ve notlar girer).
-- CSV: UTF-8 BOM ile başlar (Excel TR için), `;` veya `,` seçimi varsayılan `,`.
+**Bu turda (build mode'a ge\u00e7ince) sadece A blo\u011fu kodu yaz\u0131lacak.** B blo\u011fundaki sunucu komutlar\u0131 PR bitince ayr\u0131 mesajda parag\u00f6raflar halinde verece\u011fim \u2014 sen yap\u0131\u015ft\u0131r\u0131p \u00e7\u0131kt\u0131lar\u0131 atacaks\u0131n.
 
-### Etkilenen dosyalar
+## Etkilenen / yeni dosyalar (A)
+- yeni: `src/routes/settings_.kasa.tsx`, `settings_.kategoriler.tsx`, `settings_.kur.tsx`, `settings_.bildirimler.tsx`, `settings_.kullanicilar.tsx`, `settings_.mail.tsx`, `settings_.sunucu.tsx`
+- yeni: `src/routes/api/public/rates.sync.ts`, `src/routes/api/public/health-proxy.ts`
+- d\u00fczenle: `src/routes/settings.tsx` (kart linkleri), `src/lib/nocodb.functions.ts` (yeni tablolar i\u00e7in CRUD), `src/lib/rates.functions.ts` (manuel kur ekleme)
+- yeni migration/seed: `kategoriler`, `bildirim_ayarlari`, `kullanicilar`, `mail_hesaplari`, `kur_log` tablolar\u0131 (NocoDB UI'dan otomatik olu\u015fturma fn).
 
-- `src/routes/files.tsx` — sol ağaç firmalar listesinden, görüntüle/indir butonları, sayaçlar.
-- `src/routes/settings.tsx` — "Yedekleme" kartı eklenir, link `/settings/backup`'a.
-- `src/routes/settings.backup.tsx` — **yeni** sayfa (UI + indirme tetikleyici).
-- `src/routes/api/backup.ts` — **yeni** server route, ZIP üretimi.
-- `package.json` — `fflate` eklenir.
-
-### Sırada
-Onaylarsan bunu uygularım. Sonraki adımlar (ayrı tur): üretim/teklif/fatura sayfalarına aynı `ListToolbar` paterni.
+Onaylarsan A blo\u011funu uygulamaya ge\u00e7iyorum.
