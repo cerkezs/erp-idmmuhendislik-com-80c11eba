@@ -201,6 +201,38 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "ek_url", uidt: "LongText" },
     { title: "firma_adi", uidt: "SingleLineText" },
   ],
+  kategoriler: [
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "tip", uidt: "SingleLineText" },
+    { title: "renk", uidt: "SingleLineText" },
+    { title: "aktif", uidt: "Checkbox" },
+  ],
+  kur_log: [
+    { title: "tarih", uidt: "Date" },
+    { title: "usd", uidt: "Decimal" },
+    { title: "eur", uidt: "Decimal" },
+    { title: "kaynak", uidt: "SingleLineText" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  bildirim_ayarlari: [
+    { title: "kullanici", uidt: "SingleLineText" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "mail_aktif", uidt: "Checkbox" },
+    { title: "push_aktif", uidt: "Checkbox" },
+  ],
+  kullanicilar: [
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "eposta", uidt: "Email" },
+    { title: "rol", uidt: "SingleLineText" },
+    { title: "aktif", uidt: "Checkbox" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  mail_hesaplari: [
+    { title: "isim", uidt: "SingleLineText" },
+    { title: "from_adres", uidt: "Email" },
+    { title: "imza", uidt: "LongText" },
+    { title: "aktif", uidt: "Checkbox" },
+  ],
 };
 
 
