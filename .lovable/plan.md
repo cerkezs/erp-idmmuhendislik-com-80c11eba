@@ -1,92 +1,55 @@
-# IDM ERP — Final Plan (v6 + Navy Trust)
+## Üretim Emirleri (`/productions`) iyileştirmeleri
 
-## Görsel Kimlik
+### 1. Duruma göre renklendirme
+Her satır için `status` değerine göre sol kenar şeridi + rozet rengi:
+- **Planlandı** → mavi (`border-l-blue-500`, badge `bg-blue-500/15 text-blue-600`)
+- **Üretimde** → amber/turuncu
+- **Beklemede** → gri
+- **Tamamlandı** → yeşil
+- **İptal** → kırmızı
 
-**Renk paleti:** Navy Trust — derin lacivert (#0f1b3d, #1e3a5f) üzerine temiz açık yüzey (#e8edf3), vurgu mavi (#3b6fa0). Finans/ERP alanında güven ve kurumsallık veren bir yön.
+Şu anki düz `bg-muted` rozet bu `statusStyles` haritasıyla değişecek.
 
-## Mimari
+### 2. İki bölümlü liste: Aktif & Tamamlanan
+- `rows` ikiye ayrılır: `active = status !== "Tamamlandı"`, `done = status === "Tamamlandı"`.
+- Üstte **"Aktif Üretim Emirleri"** tablosu (Planlandı / Üretimde / Beklemede / İptal).
+- Altında ayrı kart olarak **"Tamamlanan Emirler"** tablosu — varsayılan kapalı (collapsible), başlığında sayaç (`{done.length}`).
+- Bir emrin durumu "Tamamlandı" yapıldığında otomatik üstten çıkıp alt bölüme düşer (zaten aynı `rows` üzerinden filtre).
 
-```text
-[Web · Mobil tarayıcı · Android APK (Capacitor) · PWA]
-        │ HTTPS
-        ▼
-erp.idmmuhendislik.com (Nginx)
-        ├─► Static dist/                (Lovable build)
-        ├─► /api/  → Node.js Mini-API :3000  (auth, dosya, mail, push, cron, PDF)
-        └─► /noco/ → NocoDB :8443             (ERP - LOVE 1 base)
+### 3. Her iki bölüm için gelişmiş arama & sıralama
+Üst toolbar (her iki tabloya ayrı state):
+- **Arama kutusu**: no / firma / ürün / not alanlarında case-insensitive arama.
+- **Durum filtresi** (multi-select chips — aktif tablo için).
+- **Firma filtresi** (select, mevcut firmalar listesinden).
+- **Tarih aralığı**: başlangıç ve bitiş için "şundan / şuna" date inputları.
+- **Sıralama**: dropdown — Tarih (yeni→eski / eski→yeni), Emir No, Firma A-Z, Maliyet (artan/azalan), Miktar.
+- Sütun başlıklarına tıklayınca da sıralama (ok ikonuyla).
+- Sağda **"Temizle"** butonu ve aktif filtre sayısı rozeti.
 
-Mail:  Mini-API → SMTP (kişisel veya ortak)
-Push:  Mini-API → FCM → APK/PWA
-Kur:   TCMB XML cron + manuel override
-Dosya: /uploads/{company_id}/{folder}/  +  /uploads/_expenses/{yıl-ay}/
-```
+Filtre + sıralama hafif `useMemo` ile client-side. URL search params'a yazmak opsiyonel (şu an yapmıyoruz, sade tutulacak).
 
-## Çoklu Para Birimi + Snapshot Kur
+### 4. Diğer sayfalardaki benzer ihtiyaç
+Aynı arama/sıralama/filtre paterninden fayda görecek mevcut listeler:
 
-### Temel kural — fiyat dondurma
-Bir belge kaydedildiğinde `amount` + `currency` + `fx_rate_to_try` snapshot olarak yazılır. Sonradan TCMB kuru değişse bile bu belgenin TL karşılığı asla otomatik güncellenmez. Tahsilat da kendi tarihindeki kurla snapshot alır.
+| Sayfa | Önerilen filtreler | Sıralama |
+|---|---|---|
+| `/products` | Arama (ad/sku), kategori, döviz | Ad, fiyat, stok |
+| `/companies` | Arama (ad/vergi no), tür (müşteri/tedarikçi), şehir | Ad, oluşturma |
+| `/invoices` | Arama, durum (ödendi/bekliyor), firma, tarih aralığı | Tarih, tutar, vade |
+| `/quotes` | Arama, durum, firma, tarih aralığı | Tarih, tutar |
+| `/expenses` | Arama, kategori, firma, tarih aralığı | Tarih, tutar |
+| `/kasa` | Arama, hesap, tür (gelir/gider), tarih aralığı | Tarih, tutar |
+| `/files` | Arama (ad), tür, klasör | Ad, boyut, tarih |
+| `/mail` | Arama (konu/gönderen), klasör, okundu/okunmadı | Tarih |
 
-### Kur kaynakları (öncelik)
-1. Manuel override (`source = 'manual'`)
-2. TCMB günlük (`source = 'tcmb'`)
-3. Son bilinen kur (fallback)
+Yaygın bir desen olduğu için ortak bir `<ListToolbar>` (arama + filtre slotu + sıralama dropdown'u) ve `useListFilters` hook'u oluşturulabilir — ilk olarak `/productions`'a uygulanır, sonra diğer sayfalara aynı bileşenle taşınır.
 
-### Manuel kur düzenleme
-`/settings/exchange-rates`: bugünün kurunu düzenle, geçmiş tarih için kur ekle, TCMB'ye geri dön. Mevcut belgelere etki yok — sadece yeni kayıtlar etkilenir.
+### Teknik notlar
+- Sadece `src/routes/productions.tsx` düzenlenecek (UI).
+- Tip yapısı / nocodb fonksiyonları değişmeyecek; filtre + sıralama client-side, mevcut `useQuery` aynı kalır.
+- Renkler için Tailwind utility'leri yeterli; design token'a gerek yok (durum renkleri evrensel semantik).
 
-### Belge-içi kur override
-Yeni formda TL kuru otomatik gelir ama "bu işleme özel kur" ile düzenlenebilir. Snapshot bu değerle yazılır, `fx_rate_source = 'document_override'`.
+### Bu plan sonrası
+Onaylarsan önce **sadece `/productions`** üzerinde uygulayacağım (renk + iki bölüm + toolbar). Diğer sayfalar için arama/sıralama'yı **istediğin sırayla ayrı turlarda** ekleyebiliriz — hepsini birden yaparsak bu PR çok büyük olur.
 
-## NocoDB Tabloları
-
-`users` · `user_roles` · `role_notification_prefs` · `device_tokens` · `shared_mail_accounts` · `email_log` · `companies` · `company_contacts` · `products` · `stock_movements` · `productions` · `production_stages` · `quotes` · `quote_items` · `quote_status_history` · `invoices` · `invoice_payments` · `expenses` · `expense_categories` · `account_movements` · `cash_accounts` · `cash_movements` · `actions` · `tasks` · `files` · `exchange_rates` · `notifications` · `audit_log` · `reports_saved`
-
-Parasal alan: `amount` + `currency` + `fx_rate_to_try` + `fx_rate_source` + `fx_snapshot_date`
-
-## Bildirimler
-14 bildirim türü · rol+kullanıcı bazlı tercih matrisi (in-app/push/mail) · FCM push
-
-## Mobil — Capacitor → Android APK
-Kamera · dosya · FCM push · `@capacitor/{camera,filesystem,file-picker,push-notifications,preferences}`
-
-## Modüller
-Firmalar · Dosyalar · Ürün&Stok · Üretim/DOM · Teklif/Sipariş/Fatura · Şirket Giderleri · Cari Hareketler · Kasa · E-posta · Bildirimler · Raporlar · Aksiyon/Görev · Audit log
-
-## Roller
-admin · muhasebe · üretim · satış · depo · izleyici
-
-## Çapraz Kurallar
-- Her aksiyonda onay modalı
-- Her şey düzenlenebilir (audit'li)
-- "kim • ne zaman" rozeti
-- Mobil-öncelikli
-- Tüm parasal alanlarda TRY/USD/EUR + snapshot kur
-
-## Build Sırası
-1. `server-audit.sh`
-2. Sunucu temizlik + Node.js 20 + PM2 + Nginx + certbot
-3. Firebase (FCM) projesi
-4. Design system (Navy Trust) + AppShell + döviz seçici
-5. NocoDB Meta API → tüm tablolar
-6. TCMB kur cron + manuel override + audit
-7. Auth + roller + bildirim tercih matrisi
-8. Firmalar
-9. Dosyalar
-10. Ürün + stok
-11. Üretim/DOM + otomatik cari
-12. Teklif + PDF + döviz
-13. Fatura + vade + stok düşüm
-14. Şirket giderleri
-15. Kasa
-16. E-posta
-17. Bildirim merkezi
-18. Raporlar
-19. PWA manifest + Web Push
-20. Capacitor → Android APK
-21. Nginx + PM2 + SSL + `deploy.sh`
-
-## Kapsam Dışı
-E-fatura/e-arşiv · SMS · IMAP cevap takibi · iOS native · 2FA · Çoklu şirket
-
-## Onaydan Sonra İlk Adım
-`server-audit.sh` scriptini çalıştırırsın, çıktıyı paylaşırsın → temizlik/kurulumu onaylarız → sonra kodlamaya başlarız.
+**Soru**: Diğer sayfalardan hangilerine de bu turda aynı toolbar'ı eklemememi istersin? (Yoksa önce sadece üretim, sonra tek tek mi gidelim?)
