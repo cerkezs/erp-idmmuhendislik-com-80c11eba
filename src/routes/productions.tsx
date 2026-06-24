@@ -133,8 +133,8 @@ function ProductionsPage() {
             {rows.map((p) => {
               const isOpen = expanded.has(p.Id);
               return (
-                <>
-                  <tr key={p.Id} className="border-t border-border hover:bg-muted/20">
+                <Fragment key={p.Id}>
+                  <tr className="border-t border-border hover:bg-muted/20">
                     <td className="pl-2">
                       <button onClick={() => {
                         const s = new Set(expanded);
@@ -162,14 +162,15 @@ function ProductionsPage() {
                     <tr className="bg-muted/20">
                       <td></td>
                       <td colSpan={8} className="px-3 py-3">
-                        <StagesPanel productionId={p.Id} companies={(companies as Array<{ Id: number; name: string }>) || []} onTotalChange={(t) => {
+                        <StagesPanel productionId={p.Id} currentTotal={p.total_cost || 0} companies={(companies as Array<{ Id: number; name: string }>) || []} onTotalChange={(t) => {
                           if (Math.abs((p.total_cost || 0) - t) > 0.01) updateMut.mutate({ id: p.Id, patch: { total_cost: t } });
                         }} />
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
+
             })}
           </tbody>
         </table>
