@@ -58,7 +58,7 @@ function ReportsPage() {
     const quotes = ((quoQ.data || []) as Doc[]).filter((d) => inRange(d.date, from, to));
     const expenses = ((expQ.data || []) as Exp[]).filter((e) => inRange(e.date, from, to));
     const movements = ((movQ.data || []) as Mov[]).filter((m) => inRange(m.date, from, to));
-    const productions = ((prdQ.data || []) as Prod[]).filter((p) => inRange(p.date, from, to));
+    const productions = ((prdQ.data || []) as Prod[]).filter((p) => inRange(p.start_date, from, to));
 
     const income = invoices.reduce((s, d) => s + (d.total || 0), 0);
     const expTotal = expenses.reduce((s, e) => s + toTRY(e.amount || 0, e.currency, e.fx_rate), 0);
