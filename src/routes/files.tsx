@@ -157,7 +157,6 @@ function FilesPage() {
                       <div className="flex items-center gap-2">
                         <FileText className="h-3.5 w-3.5 text-muted-foreground" />
                         {f.url ? <a href={f.url} target="_blank" rel="noreferrer" className="font-medium hover:underline">{f.name}</a> : <span className="font-medium">{f.name}</span>}
-                        {f.url && <ExternalLink className="h-3 w-3 text-muted-foreground" />}
                       </div>
                     </td>
                     <td className="px-3 py-2"><span className="rounded bg-muted px-1.5 py-0.5 text-xs">{f.category}</span></td>
@@ -165,8 +164,17 @@ function FilesPage() {
                     <td className="px-3 py-2 text-muted-foreground">{f.folder || "—"}</td>
                     <td className="px-3 py-2 text-xs">{f.kind || "—"}</td>
                     <td className="px-3 py-2 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" onClick={() => { if (confirm("Sil?")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      <Button variant="ghost" size="sm" disabled={!f.url} title="Görüntüle"
+                        onClick={() => { if (f.url) window.open(f.url, "_blank", "noopener,noreferrer"); }}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="sm" disabled={!f.url} title="İndir" asChild={!!f.url}>
+                        {f.url
+                          ? <a href={f.url} download={f.name || true} rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
+                          : <Download className="h-3.5 w-3.5" />}
+                      </Button>
+                      <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm("Kayıt silinsin mi? (Sunucudaki dosya silinmez)")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                     </td>
                   </tr>
                 ))}
