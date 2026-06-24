@@ -231,8 +231,15 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "isim", uidt: "SingleLineText" },
     { title: "from_adres", uidt: "Email" },
     { title: "imza", uidt: "LongText" },
+    { title: "smtp_host", uidt: "SingleLineText" },
+    { title: "smtp_port", uidt: "Number" },
+    { title: "smtp_user", uidt: "SingleLineText" },
+    { title: "smtp_pass_enc", uidt: "LongText" },
+    { title: "smtp_secure", uidt: "Checkbox" },
+    { title: "varsayilan", uidt: "Checkbox" },
     { title: "aktif", uidt: "Checkbox" },
   ],
+
 };
 
 
