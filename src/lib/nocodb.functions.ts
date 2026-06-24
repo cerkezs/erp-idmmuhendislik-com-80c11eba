@@ -244,7 +244,8 @@ function toTr<T extends Record<string, unknown>>(
 }
 
 function fromTr(row: Record_, map: Record<string, string>): Record_ {
-  const out: Record_ = { Id: row.Id };
+  const out: Record_ = {};
+  if (typeof row.Id === "number") out.Id = row.Id;
   for (const [en, tr] of Object.entries(map)) {
     out[en] = (row[tr] ?? null) as JsonValue;
   }
