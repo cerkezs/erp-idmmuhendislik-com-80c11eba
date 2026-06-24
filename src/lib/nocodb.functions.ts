@@ -238,7 +238,9 @@ function toTr<T extends Record<string, unknown>>(
   const out: Record<string, JsonValue> = {};
   for (const [k, v] of Object.entries(obj)) {
     const tr = map[k] || k;
-    out[tr] = (v ?? null) as JsonValue;
+    // NocoDB rejects empty strings for Date/Number fields; normalize to null
+    const normalized = v === "" || v === undefined ? null : (v as JsonValue);
+    out[tr] = normalized;
   }
   return out;
 }
