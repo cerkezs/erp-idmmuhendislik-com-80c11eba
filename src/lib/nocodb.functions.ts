@@ -103,7 +103,47 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "kdv_orani", uidt: "Decimal" },
     { title: "satir_toplam", uidt: "Decimal" },
   ],
+  giderler: [
+    { title: "tarih", uidt: "Date" },
+    { title: "kategori", uidt: "SingleLineText" },
+    { title: "aciklama", uidt: "LongText" },
+    { title: "tutar", uidt: "Decimal" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "kur", uidt: "Decimal" },
+    { title: "firma_id", uidt: "Number" },
+    { title: "firma_adi", uidt: "SingleLineText" },
+    { title: "fis_no", uidt: "SingleLineText" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  kasalar: [
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "acilis_bakiye", uidt: "Decimal" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  kasa_hareketleri: [
+    { title: "tarih", uidt: "Date" },
+    { title: "kasa_id", uidt: "Number" },
+    { title: "kasa_adi", uidt: "SingleLineText" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "tutar", uidt: "Decimal" },
+    { title: "para_birimi", uidt: "SingleLineText" },
+    { title: "kur", uidt: "Decimal" },
+    { title: "aciklama", uidt: "LongText" },
+    { title: "referans", uidt: "SingleLineText" },
+  ],
+  bildirimler: [
+    { title: "tarih", uidt: "DateTime" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "baslik", uidt: "SingleLineText" },
+    { title: "mesaj", uidt: "LongText" },
+    { title: "link", uidt: "SingleLineText" },
+    { title: "okundu", uidt: "Checkbox" },
+    { title: "kullanici", uidt: "SingleLineText" },
+  ],
 };
+
 
 // ---------- Setup ----------
 async function ensureBase(): Promise<string> {
