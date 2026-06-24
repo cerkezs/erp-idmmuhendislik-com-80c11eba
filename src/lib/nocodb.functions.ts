@@ -231,10 +231,8 @@ const CompanyInput = z.object({
 });
 
 export const listCompanies = createServerFn({ method: "GET" }).handler(
-  async () => {
-    return (await listRecords("companies")) as Array<
-      Record_ & { Id: number; name?: string; type?: string }
-    >;
+  async (): Promise<Record_[]> => {
+    return await listRecords("companies");
   },
 );
 
