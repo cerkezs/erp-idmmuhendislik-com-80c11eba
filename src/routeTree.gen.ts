@@ -24,6 +24,7 @@ import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsMailRouteImport } from './routes/settings_.mail'
 import { Route as SettingsKurRouteImport } from './routes/settings_.kur'
 import { Route as SettingsKullanicilarRouteImport } from './routes/settings_.kullanicilar'
 import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
@@ -106,6 +107,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsMailRoute = SettingsMailRouteImport.update({
+  id: '/settings_/mail',
+  path: '/settings/mail',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsKurRoute = SettingsKurRouteImport.update({
   id: '/settings_/kur',
   path: '/settings/kur',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/settings/kategoriler': typeof SettingsKategorilerRoute
   '/settings/kullanicilar': typeof SettingsKullanicilarRoute
   '/settings/kur': typeof SettingsKurRoute
+  '/settings/mail': typeof SettingsMailRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/settings/kategoriler': typeof SettingsKategorilerRoute
   '/settings/kullanicilar': typeof SettingsKullanicilarRoute
   '/settings/kur': typeof SettingsKurRoute
+  '/settings/mail': typeof SettingsMailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/settings_/kategoriler': typeof SettingsKategorilerRoute
   '/settings_/kullanicilar': typeof SettingsKullanicilarRoute
   '/settings_/kur': typeof SettingsKurRoute
+  '/settings_/mail': typeof SettingsMailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/settings/kategoriler'
     | '/settings/kullanicilar'
     | '/settings/kur'
+    | '/settings/mail'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/settings/kategoriler'
     | '/settings/kullanicilar'
     | '/settings/kur'
+    | '/settings/mail'
   id:
     | '__root__'
     | '/'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/settings_/kategoriler'
     | '/settings_/kullanicilar'
     | '/settings_/kur'
+    | '/settings_/mail'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   SettingsKategorilerRoute: typeof SettingsKategorilerRoute
   SettingsKullanicilarRoute: typeof SettingsKullanicilarRoute
   SettingsKurRoute: typeof SettingsKurRoute
+  SettingsMailRoute: typeof SettingsMailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -410,6 +423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/mail': {
+      id: '/settings_/mail'
+      path: '/settings/mail'
+      fullPath: '/settings/mail'
+      preLoaderRoute: typeof SettingsMailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/kur': {
       id: '/settings_/kur'
       path: '/settings/kur'
@@ -477,6 +497,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsKategorilerRoute: SettingsKategorilerRoute,
   SettingsKullanicilarRoute: SettingsKullanicilarRoute,
   SettingsKurRoute: SettingsKurRoute,
+  SettingsMailRoute: SettingsMailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

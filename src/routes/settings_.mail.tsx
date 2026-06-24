@@ -14,7 +14,7 @@ import { getSmtpStatus, sendTestMail } from "@/lib/system.functions";
 import { listMailAccounts, createMailAccount, updateMailAccount, deleteMailAccount } from "@/lib/nocodb.functions";
 import { Mail, Send, Plus, Pencil, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 
-export const Route = createFileRoute("/settings/mail")({
+export const Route = createFileRoute("/settings_/mail")({
   head: () => ({ meta: [{ title: "Mail & SMTP — Ayarlar" }] }),
   component: MailPage,
 });
