@@ -203,19 +203,32 @@ export const setupNocoDB = createServerFn({ method: "POST" }).handler(
 // ---------- Table ID cache ----------
 let tableCache: Record<string, string> | null = null;
 
-async function getTableId(name: string): Promise<string> {
-  if (tableCache?.[name]) return tableCache[name];
+async function loadTableCache(): Promise<Record<string, string>> {
   const baseId = await ensureBase();
   const tables = await listTables(baseId);
-  tableCache = {};
+  const cache: Record<string, string> = {};
   for (const t of tables.list || []) {
-    tableCache[t.title] = t.id;
-    tableCache[t.table_name] = t.id;
+    cache[t.title] = t.id;
+    cache[t.table_name] = t.id;
   }
-  const id = tableCache[name];
-  if (!id) throw new Error(`Tablo bulunamadı: ${name}. Önce /setup çalıştırın.`);
-  return id;
+  tableCache = cache;
+  return cache;
 }
+
+async function getTableId(name: string): Promise<string> {
+  if (tableCache?.[name]) return tableCache[name];
+  const cache = await loadTableCache();
+  if (cache[name]) return cache[name];
+  // Auto-create missing table if we know its schema
+  if (TABLES[name]) {
+    const baseId = await ensureBase();
+    const created = await ensureTable(baseId, name, TABLES[name]);
+    cache[name] = created.id;
+    return created.id;
+  }
+  throw new Error(`Tablo bulunamadı: ${name}. Önce /setup çalıştırın.`);
+}
+
 
 
 // ---------- Generic CRUD ----------
