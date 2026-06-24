@@ -164,7 +164,7 @@ function CompaniesPage() {
                 </td>
               </tr>
             )}
-            {data?.map((c: Company) => (
+            {data?.map((c) => c as Company).map((c: Company) => (
               <tr key={c.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 font-medium">{c.name || "—"}</td>
                 <td className="px-3 py-2">
