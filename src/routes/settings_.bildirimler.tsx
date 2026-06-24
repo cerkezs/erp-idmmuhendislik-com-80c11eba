@@ -5,7 +5,7 @@ import { AppShell } from "@/components/app-shell";
 import { listNotifPrefs, upsertNotifPref } from "@/lib/nocodb.functions";
 import { Bell, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/settings/bildirimler")({
+export const Route = createFileRoute("/settings_/bildirimler")({
   head: () => ({ meta: [{ title: "Bildirim Türleri — Ayarlar" }] }),
   component: BildirimlerPage,
 });

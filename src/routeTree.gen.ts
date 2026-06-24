@@ -26,6 +26,7 @@ import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsKurRouteImport } from './routes/settings_.kur'
 import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
+import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bildirimler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
@@ -114,6 +115,11 @@ const SettingsKategorilerRoute = SettingsKategorilerRouteImport.update({
   path: '/settings/kategoriler',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsBildirimlerRoute = SettingsBildirimlerRouteImport.update({
+  id: '/settings_/bildirimler',
+  path: '/settings/bildirimler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsBackupRoute = SettingsBackupRouteImport.update({
   id: '/settings_/backup',
   path: '/settings/backup',
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
+  '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
   '/settings/kur': typeof SettingsKurRoute
 }
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
+  '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
   '/settings/kur': typeof SettingsKurRoute
 }
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings_/backup': typeof SettingsBackupRoute
+  '/settings_/bildirimler': typeof SettingsBildirimlerRoute
   '/settings_/kategoriler': typeof SettingsKategorilerRoute
   '/settings_/kur': typeof SettingsKurRoute
 }
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings/backup'
+    | '/settings/bildirimler'
     | '/settings/kategoriler'
     | '/settings/kur'
   fileRoutesByTo: FileRoutesByTo
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings/backup'
+    | '/settings/bildirimler'
     | '/settings/kategoriler'
     | '/settings/kur'
   id:
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings_/backup'
+    | '/settings_/bildirimler'
     | '/settings_/kategoriler'
     | '/settings_/kur'
   fileRoutesById: FileRoutesById
@@ -273,6 +285,7 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   ApiBackupRoute: typeof ApiBackupRoute
   SettingsBackupRoute: typeof SettingsBackupRoute
+  SettingsBildirimlerRoute: typeof SettingsBildirimlerRoute
   SettingsKategorilerRoute: typeof SettingsKategorilerRoute
   SettingsKurRoute: typeof SettingsKurRoute
 }
@@ -398,6 +411,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsKategorilerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/bildirimler': {
+      id: '/settings_/bildirimler'
+      path: '/settings/bildirimler'
+      fullPath: '/settings/bildirimler'
+      preLoaderRoute: typeof SettingsBildirimlerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/backup': {
       id: '/settings_/backup'
       path: '/settings/backup'
@@ -433,6 +453,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   ApiBackupRoute: ApiBackupRoute,
   SettingsBackupRoute: SettingsBackupRoute,
+  SettingsBildirimlerRoute: SettingsBildirimlerRoute,
   SettingsKategorilerRoute: SettingsKategorilerRoute,
   SettingsKurRoute: SettingsKurRoute,
 }
