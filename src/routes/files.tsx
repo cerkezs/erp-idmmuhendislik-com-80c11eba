@@ -13,7 +13,7 @@ import {
 import {
   listFiles, createFile, updateFile, deleteFile, listCompanies,
 } from "@/lib/nocodb.functions";
-import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Search, ExternalLink } from "lucide-react";
+import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Search, Eye, Download } from "lucide-react";
 
 export const Route = createFileRoute("/files")({
   head: () => ({ meta: [{ title: "Dosyalar — IDM ERP" }] }),
