@@ -1266,26 +1266,66 @@ export const deleteUser = createServerFn({ method: "POST" })
   .handler(async ({ data }) => deleteRecord("kullanicilar", data.id));
 
 // ---------- Mail Hesapları (gönderici profilleri) ----------
-const MH_MAP = { name: "isim", from_address: "from_adres", signature: "imza", active: "aktif" } as const;
+const MH_MAP = {
+  name: "isim",
+  from_address: "from_adres",
+  signature: "imza",
+  smtp_host: "smtp_host",
+  smtp_port: "smtp_port",
+  smtp_user: "smtp_user",
+  smtp_pass_enc: "smtp_pass_enc",
+  smtp_secure: "smtp_secure",
+  is_default: "varsayilan",
+  active: "aktif",
+} as const;
 const MailAccountInput = z.object({
   name: z.string().min(1),
   from_address: z.string().optional().default(""),
   signature: z.string().optional().default(""),
+  smtp_host: z.string().optional().default(""),
+  smtp_port: z.number().optional().default(587),
+  smtp_user: z.string().optional().default(""),
+  smtp_pass_enc: z.string().optional().default(""),
+  smtp_secure: z.boolean().optional().default(false),
+  is_default: z.boolean().optional().default(false),
   active: z.boolean().optional().default(true),
 });
 export const listMailAccounts = createServerFn({ method: "GET" }).handler(async () =>
-  (await listRecords("mail_hesaplari", 100)).map((r) => fromTr(r, MH_MAP)),
+  (await listRecords("mail_hesaplari", 100)).map((r) => {
+    const m = fromTr(r, MH_MAP) as Record<string, unknown>;
+    // never return encrypted password to client
+    delete m.smtp_pass_enc;
+    return { ...m, has_password: Boolean((r as Record<string, unknown>).smtp_pass_enc) };
+  }),
 );
 export const createMailAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => MailAccountInput.parse(d))
-  .handler(async ({ data }) =>
-    fromTr(await createRecord("mail_hesaplari", toTr(data, MH_MAP)), MH_MAP),
-  );
+  .handler(async ({ data }) => {
+    const rec = fromTr(await createRecord("mail_hesaplari", toTr(data, MH_MAP)), MH_MAP) as Record<string, unknown>;
+    delete rec.smtp_pass_enc;
+    return rec;
+  });
 export const updateMailAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number(), patch: MailAccountInput.partial() }).parse(d))
-  .handler(async ({ data }) =>
-    fromTr(await updateRecord("mail_hesaplari", data.id, toTr(data.patch, MH_MAP)), MH_MAP),
-  );
+  .handler(async ({ data }) => {
+    const rec = fromTr(await updateRecord("mail_hesaplari", data.id, toTr(data.patch, MH_MAP)), MH_MAP) as Record<string, unknown>;
+    delete rec.smtp_pass_enc;
+    return rec;
+  });
 export const deleteMailAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("mail_hesaplari", data.id));
+
+// internal: full record (with encrypted pass) - used by mail sender
+export async function _internalGetMailAccount(id: number): Promise<Record<string, unknown> | null> {
+  const list = await listRecords("mail_hesaplari", 100);
+  const row = list.find((r) => (r as Record<string, unknown>).Id === id);
+  return row ? (fromTr(row, MH_MAP) as Record<string, unknown>) : null;
+}
+export async function _internalGetDefaultMailAccount(): Promise<Record<string, unknown> | null> {
+  const list = await listRecords("mail_hesaplari", 100);
+  const def = list.find((r) => (r as Record<string, unknown>).varsayilan === true && (r as Record<string, unknown>).aktif !== false)
+    || list.find((r) => (r as Record<string, unknown>).aktif !== false);
+  return def ? (fromTr(def, MH_MAP) as Record<string, unknown>) : null;
+}
+
