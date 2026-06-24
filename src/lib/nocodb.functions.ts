@@ -648,3 +648,182 @@ export const deleteInvoice = createServerFn({ method: "POST" })
     }
     return deleteRecord("faturalar", data.id);
   });
+
+// ---------- Giderler ----------
+const GIDER_MAP = {
+  date: "tarih",
+  category: "kategori",
+  description: "aciklama",
+  amount: "tutar",
+  currency: "para_birimi",
+  fx_rate: "kur",
+  company_id: "firma_id",
+  company_name: "firma_adi",
+  receipt_no: "fis_no",
+  notes: "notlar",
+} as const;
+
+const ExpenseInput = z.object({
+  date: z.string().optional().default(""),
+  category: z.string().optional().default(""),
+  description: z.string().optional().default(""),
+  amount: z.number().optional().default(0),
+  currency: z.string().optional().default("TRY"),
+  fx_rate: z.number().optional().default(1),
+  company_id: z.number().nullable().optional(),
+  company_name: z.string().optional().default(""),
+  receipt_no: z.string().optional().default(""),
+  notes: z.string().optional().default(""),
+});
+
+export const listExpenses = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("giderler");
+    return rows.map((r) => fromTr(r, GIDER_MAP));
+  },
+);
+
+export const createExpense = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => ExpenseInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("giderler", toTr(data, GIDER_MAP)), GIDER_MAP),
+  );
+
+export const updateExpense = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: ExpenseInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("giderler", data.id, toTr(data.patch, GIDER_MAP)), GIDER_MAP),
+  );
+
+export const deleteExpense = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("giderler", data.id));
+
+// ---------- Kasa ----------
+const KASA_MAP = {
+  name: "ad",
+  type: "tur",
+  currency: "para_birimi",
+  opening_balance: "acilis_bakiye",
+  notes: "notlar",
+} as const;
+
+const KASA_HAR_MAP = {
+  date: "tarih",
+  account_id: "kasa_id",
+  account_name: "kasa_adi",
+  type: "tur",
+  amount: "tutar",
+  currency: "para_birimi",
+  fx_rate: "kur",
+  description: "aciklama",
+  reference: "referans",
+} as const;
+
+const AccountInput = z.object({
+  name: z.string().min(1, "Ad zorunlu"),
+  type: z.string().optional().default("Nakit"),
+  currency: z.string().optional().default("TRY"),
+  opening_balance: z.number().optional().default(0),
+  notes: z.string().optional().default(""),
+});
+
+const MovementInput = z.object({
+  date: z.string().optional().default(""),
+  account_id: z.number(),
+  account_name: z.string().optional().default(""),
+  type: z.string().optional().default("Gelir"),
+  amount: z.number().default(0),
+  currency: z.string().optional().default("TRY"),
+  fx_rate: z.number().optional().default(1),
+  description: z.string().optional().default(""),
+  reference: z.string().optional().default(""),
+});
+
+export const listAccounts = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("kasalar");
+    return rows.map((r) => fromTr(r, KASA_MAP));
+  },
+);
+
+export const createAccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => AccountInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("kasalar", toTr(data, KASA_MAP)), KASA_MAP),
+  );
+
+export const updateAccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.number(), patch: AccountInput.partial() }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("kasalar", data.id, toTr(data.patch, KASA_MAP)), KASA_MAP),
+  );
+
+export const deleteAccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("kasalar", data.id));
+
+export const listMovements = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("kasa_hareketleri", 500);
+    return rows.map((r) => fromTr(r, KASA_HAR_MAP));
+  },
+);
+
+export const createMovement = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => MovementInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("kasa_hareketleri", toTr(data, KASA_HAR_MAP)), KASA_HAR_MAP),
+  );
+
+export const deleteMovement = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("kasa_hareketleri", data.id));
+
+// ---------- Bildirimler ----------
+const BILDIRIM_MAP = {
+  date: "tarih",
+  type: "tur",
+  title: "baslik",
+  message: "mesaj",
+  link: "link",
+  read: "okundu",
+  user: "kullanici",
+} as const;
+
+const NotificationInput = z.object({
+  date: z.string().optional().default(""),
+  type: z.string().optional().default("info"),
+  title: z.string().min(1, "Başlık zorunlu"),
+  message: z.string().optional().default(""),
+  link: z.string().optional().default(""),
+  read: z.boolean().optional().default(false),
+  user: z.string().optional().default(""),
+});
+
+export const listNotifications = createServerFn({ method: "GET" }).handler(
+  async (): Promise<Record_[]> => {
+    const rows = await listRecords("bildirimler", 500);
+    return rows.map((r) => fromTr(r, BILDIRIM_MAP));
+  },
+);
+
+export const createNotification = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => NotificationInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("bildirimler", toTr(data, BILDIRIM_MAP)), BILDIRIM_MAP),
+  );
+
+export const markNotificationRead = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number(), read: z.boolean().default(true) }).parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("bildirimler", data.id, { okundu: data.read }), BILDIRIM_MAP),
+  );
+
+export const deleteNotification = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("bildirimler", data.id));
