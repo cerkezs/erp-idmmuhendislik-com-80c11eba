@@ -24,6 +24,12 @@ import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsSunucuRouteImport } from './routes/settings_.sunucu'
+import { Route as SettingsMailRouteImport } from './routes/settings_.mail'
+import { Route as SettingsKurRouteImport } from './routes/settings_.kur'
+import { Route as SettingsKullanicilarRouteImport } from './routes/settings_.kullanicilar'
+import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
+import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bildirimler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
@@ -102,6 +108,36 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsSunucuRoute = SettingsSunucuRouteImport.update({
+  id: '/settings_/sunucu',
+  path: '/settings/sunucu',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsMailRoute = SettingsMailRouteImport.update({
+  id: '/settings_/mail',
+  path: '/settings/mail',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsKurRoute = SettingsKurRouteImport.update({
+  id: '/settings_/kur',
+  path: '/settings/kur',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsKullanicilarRoute = SettingsKullanicilarRouteImport.update({
+  id: '/settings_/kullanicilar',
+  path: '/settings/kullanicilar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsKategorilerRoute = SettingsKategorilerRouteImport.update({
+  id: '/settings_/kategoriler',
+  path: '/settings/kategoriler',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsBildirimlerRoute = SettingsBildirimlerRouteImport.update({
+  id: '/settings_/bildirimler',
+  path: '/settings/bildirimler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsBackupRoute = SettingsBackupRouteImport.update({
   id: '/settings_/backup',
   path: '/settings/backup',
@@ -131,6 +167,12 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
+  '/settings/bildirimler': typeof SettingsBildirimlerRoute
+  '/settings/kategoriler': typeof SettingsKategorilerRoute
+  '/settings/kullanicilar': typeof SettingsKullanicilarRoute
+  '/settings/kur': typeof SettingsKurRoute
+  '/settings/mail': typeof SettingsMailRoute
+  '/settings/sunucu': typeof SettingsSunucuRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -150,6 +192,12 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings/backup': typeof SettingsBackupRoute
+  '/settings/bildirimler': typeof SettingsBildirimlerRoute
+  '/settings/kategoriler': typeof SettingsKategorilerRoute
+  '/settings/kullanicilar': typeof SettingsKullanicilarRoute
+  '/settings/kur': typeof SettingsKurRoute
+  '/settings/mail': typeof SettingsMailRoute
+  '/settings/sunucu': typeof SettingsSunucuRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +218,12 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
   '/settings_/backup': typeof SettingsBackupRoute
+  '/settings_/bildirimler': typeof SettingsBildirimlerRoute
+  '/settings_/kategoriler': typeof SettingsKategorilerRoute
+  '/settings_/kullanicilar': typeof SettingsKullanicilarRoute
+  '/settings_/kur': typeof SettingsKurRoute
+  '/settings_/mail': typeof SettingsMailRoute
+  '/settings_/sunucu': typeof SettingsSunucuRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,6 +245,12 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings/backup'
+    | '/settings/bildirimler'
+    | '/settings/kategoriler'
+    | '/settings/kullanicilar'
+    | '/settings/kur'
+    | '/settings/mail'
+    | '/settings/sunucu'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +270,12 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings/backup'
+    | '/settings/bildirimler'
+    | '/settings/kategoriler'
+    | '/settings/kullanicilar'
+    | '/settings/kur'
+    | '/settings/mail'
+    | '/settings/sunucu'
   id:
     | '__root__'
     | '/'
@@ -229,6 +295,12 @@ export interface FileRouteTypes {
     | '/setup'
     | '/api/backup'
     | '/settings_/backup'
+    | '/settings_/bildirimler'
+    | '/settings_/kategoriler'
+    | '/settings_/kullanicilar'
+    | '/settings_/kur'
+    | '/settings_/mail'
+    | '/settings_/sunucu'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +321,12 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   ApiBackupRoute: typeof ApiBackupRoute
   SettingsBackupRoute: typeof SettingsBackupRoute
+  SettingsBildirimlerRoute: typeof SettingsBildirimlerRoute
+  SettingsKategorilerRoute: typeof SettingsKategorilerRoute
+  SettingsKullanicilarRoute: typeof SettingsKullanicilarRoute
+  SettingsKurRoute: typeof SettingsKurRoute
+  SettingsMailRoute: typeof SettingsMailRoute
+  SettingsSunucuRoute: typeof SettingsSunucuRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +436,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings_/sunucu': {
+      id: '/settings_/sunucu'
+      path: '/settings/sunucu'
+      fullPath: '/settings/sunucu'
+      preLoaderRoute: typeof SettingsSunucuRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings_/mail': {
+      id: '/settings_/mail'
+      path: '/settings/mail'
+      fullPath: '/settings/mail'
+      preLoaderRoute: typeof SettingsMailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings_/kur': {
+      id: '/settings_/kur'
+      path: '/settings/kur'
+      fullPath: '/settings/kur'
+      preLoaderRoute: typeof SettingsKurRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings_/kullanicilar': {
+      id: '/settings_/kullanicilar'
+      path: '/settings/kullanicilar'
+      fullPath: '/settings/kullanicilar'
+      preLoaderRoute: typeof SettingsKullanicilarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings_/kategoriler': {
+      id: '/settings_/kategoriler'
+      path: '/settings/kategoriler'
+      fullPath: '/settings/kategoriler'
+      preLoaderRoute: typeof SettingsKategorilerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings_/bildirimler': {
+      id: '/settings_/bildirimler'
+      path: '/settings/bildirimler'
+      fullPath: '/settings/bildirimler'
+      preLoaderRoute: typeof SettingsBildirimlerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings_/backup': {
       id: '/settings_/backup'
       path: '/settings/backup'
@@ -393,6 +513,12 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   ApiBackupRoute: ApiBackupRoute,
   SettingsBackupRoute: SettingsBackupRoute,
+  SettingsBildirimlerRoute: SettingsBildirimlerRoute,
+  SettingsKategorilerRoute: SettingsKategorilerRoute,
+  SettingsKullanicilarRoute: SettingsKullanicilarRoute,
+  SettingsKurRoute: SettingsKurRoute,
+  SettingsMailRoute: SettingsMailRoute,
+  SettingsSunucuRoute: SettingsSunucuRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

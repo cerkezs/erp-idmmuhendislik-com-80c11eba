@@ -3,15 +3,15 @@ import { AppShell } from "@/components/app-shell";
 import { Settings, Users, Mail, RefreshCw, Bell, Server, Tags, Wallet, Archive } from "lucide-react";
 
 const SECTIONS = [
-  { to: "/settings", label: "Kullanıcılar & Roller", icon: Users, desc: "Kullanıcı ekle, rol ata, bildirim tercih matrisi" },
-  { to: "/settings", label: "Kişisel & Ortak Mail", icon: Mail, desc: "SMTP ayarları, paylaşılan gönderici hesaplar" },
-  { to: "/settings", label: "Döviz Kurları", icon: RefreshCw, desc: "TCMB otomatik · manuel override · geçmiş kurlar" },
-  { to: "/settings", label: "Bildirim Türleri", icon: Bell, desc: "Vade, stok, üretim, kasa — kanal başına aç/kapa" },
-  { to: "/settings", label: "Kasa Hesapları", icon: Wallet, desc: "Çoklu kasa (TRY/USD/EUR) tanımları" },
-  { to: "/settings", label: "Kategoriler", icon: Tags, desc: "Gider kategorileri, ürün kategorileri" },
-  { to: "/settings/backup", label: "Yedekleme", icon: Archive, desc: "Tüm sistemin ZIP yedeği · bölüm seç · firma bazlı klasörle" },
-  { to: "/settings", label: "Sunucu Durumu", icon: Server, desc: "Disk, RAM, mini-API, NocoDB sağlık durumu" },
-];
+  { to: "/settings/kullanicilar", label: "Kullanıcılar & Roller", icon: Users, desc: "Kullanıcı ekle, rol ata (admin / operator / viewer)" },
+  { to: "/settings/mail", label: "Mail & SMTP", icon: Mail, desc: "SMTP durumu, test maili, ortak gönderici hesaplar" },
+  { to: "/settings/kur", label: "Döviz Kurları", icon: RefreshCw, desc: "TCMB otomatik · manuel override · geçmiş kurlar" },
+  { to: "/settings/bildirimler", label: "Bildirim Türleri", icon: Bell, desc: "Vade, stok, üretim, kasa — kanal başına aç/kapa" },
+  { to: "/kasa", label: "Kasa Hesapları", icon: Wallet, desc: "Çoklu kasa (TRY/USD/EUR) — Kasa modülünde yönetilir" },
+  { to: "/settings/kategoriler", label: "Kategoriler", icon: Tags, desc: "Gider · ürün · teklif kategorileri" },
+  { to: "/settings/backup", label: "Yedekleme", icon: Archive, desc: "ZIP yedek · bölüm seç · firma bazlı klasörle" },
+  { to: "/settings/sunucu", label: "Sunucu Durumu", icon: Server, desc: "NocoDB ping, mini-API sağlık, disk/RAM" },
+] as const;
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Ayarlar — IDM ERP" }] }),
@@ -49,10 +49,6 @@ export const Route = createFileRoute("/settings")({
               </Link>
             );
           })}
-        </div>
-
-        <div className="mt-6 rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-          Bu alt sayfalar, sunucu denetimi tamamlandıktan sonra mini-API ile bağlanacak.
         </div>
       </div>
     </AppShell>

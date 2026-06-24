@@ -201,6 +201,38 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "ek_url", uidt: "LongText" },
     { title: "firma_adi", uidt: "SingleLineText" },
   ],
+  kategoriler: [
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "tip", uidt: "SingleLineText" },
+    { title: "renk", uidt: "SingleLineText" },
+    { title: "aktif", uidt: "Checkbox" },
+  ],
+  kur_log: [
+    { title: "tarih", uidt: "Date" },
+    { title: "usd", uidt: "Decimal" },
+    { title: "eur", uidt: "Decimal" },
+    { title: "kaynak", uidt: "SingleLineText" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  bildirim_ayarlari: [
+    { title: "kullanici", uidt: "SingleLineText" },
+    { title: "tur", uidt: "SingleLineText" },
+    { title: "mail_aktif", uidt: "Checkbox" },
+    { title: "push_aktif", uidt: "Checkbox" },
+  ],
+  kullanicilar: [
+    { title: "ad", uidt: "SingleLineText" },
+    { title: "eposta", uidt: "Email" },
+    { title: "rol", uidt: "SingleLineText" },
+    { title: "aktif", uidt: "Checkbox" },
+    { title: "notlar", uidt: "LongText" },
+  ],
+  mail_hesaplari: [
+    { title: "isim", uidt: "SingleLineText" },
+    { title: "from_adres", uidt: "Email" },
+    { title: "imza", uidt: "LongText" },
+    { title: "aktif", uidt: "Checkbox" },
+  ],
 };
 
 
@@ -1133,3 +1165,120 @@ export const updateMail = createServerFn({ method: "POST" })
 export const deleteMail = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("mail_log", data.id));
+
+// ---------- Kategoriler ----------
+const KAT_MAP = { name: "ad", type: "tip", color: "renk", active: "aktif" } as const;
+const CategoryInput = z.object({
+  name: z.string().min(1),
+  type: z.enum(["gider", "urun", "teklif"]).default("gider"),
+  color: z.string().optional().default(""),
+  active: z.boolean().optional().default(true),
+});
+export const listCategories = createServerFn({ method: "GET" }).handler(async () =>
+  (await listRecords("kategoriler", 500)).map((r) => fromTr(r, KAT_MAP)),
+);
+export const createCategory = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => CategoryInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("kategoriler", toTr(data, KAT_MAP)), KAT_MAP),
+  );
+export const updateCategory = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number(), patch: CategoryInput.partial() }).parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("kategoriler", data.id, toTr(data.patch, KAT_MAP)), KAT_MAP),
+  );
+export const deleteCategory = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("kategoriler", data.id));
+
+// ---------- Kur Log ----------
+const KUR_MAP = { date: "tarih", usd: "usd", eur: "eur", source: "kaynak", notes: "notlar" } as const;
+const KurInput = z.object({
+  date: z.string().min(1),
+  usd: z.number(),
+  eur: z.number(),
+  source: z.string().optional().default("manuel"),
+  notes: z.string().optional().default(""),
+});
+export const listKurLog = createServerFn({ method: "GET" }).handler(async () =>
+  (await listRecords("kur_log", 500)).map((r) => fromTr(r, KUR_MAP)),
+);
+export const createKurLog = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => KurInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("kur_log", toTr(data, KUR_MAP)), KUR_MAP),
+  );
+export const deleteKurLog = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("kur_log", data.id));
+
+// ---------- Bildirim Ayarları ----------
+const BAY_MAP = { user: "kullanici", type: "tur", mail: "mail_aktif", push: "push_aktif" } as const;
+const NotifPrefInput = z.object({
+  user: z.string().optional().default("default"),
+  type: z.string().min(1),
+  mail: z.boolean().optional().default(true),
+  push: z.boolean().optional().default(true),
+});
+export const listNotifPrefs = createServerFn({ method: "GET" }).handler(async () =>
+  (await listRecords("bildirim_ayarlari", 500)).map((r) => fromTr(r, BAY_MAP)),
+);
+export const upsertNotifPref = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number().optional(), data: NotifPrefInput }).parse(d))
+  .handler(async ({ data }) => {
+    if (data.id) {
+      return fromTr(await updateRecord("bildirim_ayarlari", data.id, toTr(data.data, BAY_MAP)), BAY_MAP);
+    }
+    return fromTr(await createRecord("bildirim_ayarlari", toTr(data.data, BAY_MAP)), BAY_MAP);
+  });
+
+// ---------- Kullanıcılar ----------
+const USER_MAP = { name: "ad", email: "eposta", role: "rol", active: "aktif", notes: "notlar" } as const;
+const UserInput = z.object({
+  name: z.string().min(1),
+  email: z.string().optional().default(""),
+  role: z.enum(["admin", "operator", "viewer"]).default("operator"),
+  active: z.boolean().optional().default(true),
+  notes: z.string().optional().default(""),
+});
+export const listUsers = createServerFn({ method: "GET" }).handler(async () =>
+  (await listRecords("kullanicilar", 200)).map((r) => fromTr(r, USER_MAP)),
+);
+export const createUser = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => UserInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP),
+  );
+export const updateUser = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number(), patch: UserInput.partial() }).parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP),
+  );
+export const deleteUser = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("kullanicilar", data.id));
+
+// ---------- Mail Hesapları (gönderici profilleri) ----------
+const MH_MAP = { name: "isim", from_address: "from_adres", signature: "imza", active: "aktif" } as const;
+const MailAccountInput = z.object({
+  name: z.string().min(1),
+  from_address: z.string().optional().default(""),
+  signature: z.string().optional().default(""),
+  active: z.boolean().optional().default(true),
+});
+export const listMailAccounts = createServerFn({ method: "GET" }).handler(async () =>
+  (await listRecords("mail_hesaplari", 100)).map((r) => fromTr(r, MH_MAP)),
+);
+export const createMailAccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => MailAccountInput.parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await createRecord("mail_hesaplari", toTr(data, MH_MAP)), MH_MAP),
+  );
+export const updateMailAccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number(), patch: MailAccountInput.partial() }).parse(d))
+  .handler(async ({ data }) =>
+    fromTr(await updateRecord("mail_hesaplari", data.id, toTr(data.patch, MH_MAP)), MH_MAP),
+  );
+export const deleteMailAccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => deleteRecord("mail_hesaplari", data.id));
