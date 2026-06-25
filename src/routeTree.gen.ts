@@ -32,7 +32,7 @@ import { Route as SettingsKullanicilarRouteImport } from './routes/settings_.kul
 import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
 import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bildirimler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
-import { Route as AuthSifreRouteImport } from './routes/auth.sifre'
+import { Route as AuthSifreRouteImport } from './routes/auth_.sifre'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
 const SetupRoute = SetupRouteImport.update({
@@ -151,9 +151,9 @@ const SettingsBackupRoute = SettingsBackupRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSifreRoute = AuthSifreRouteImport.update({
-  id: '/sifre',
-  path: '/sifre',
-  getParentRoute: () => AuthRoute,
+  id: '/auth_/sifre',
+  path: '/auth/sifre',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBackupRoute = ApiBackupRouteImport.update({
   id: '/api/backup',
@@ -164,7 +164,7 @@ const ApiBackupRoute = ApiBackupRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -191,7 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -219,7 +219,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -234,7 +234,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
-  '/auth/sifre': typeof AuthSifreRoute
+  '/auth_/sifre': typeof AuthSifreRoute
   '/settings_/backup': typeof SettingsBackupRoute
   '/settings_/bildirimler': typeof SettingsBildirimlerRoute
   '/settings_/kategoriler': typeof SettingsKategorilerRoute
@@ -317,7 +317,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/api/backup'
-    | '/auth/sifre'
+    | '/auth_/sifre'
     | '/settings_/backup'
     | '/settings_/bildirimler'
     | '/settings_/kategoriler'
@@ -330,7 +330,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthRoute: typeof AuthRoute
   CompaniesRoute: typeof CompaniesRoute
   ExpensesRoute: typeof ExpensesRoute
   FilesRoute: typeof FilesRoute
@@ -345,6 +345,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   ApiBackupRoute: typeof ApiBackupRoute
+  AuthSifreRoute: typeof AuthSifreRoute
   SettingsBackupRoute: typeof SettingsBackupRoute
   SettingsBildirimlerRoute: typeof SettingsBildirimlerRoute
   SettingsKategorilerRoute: typeof SettingsKategorilerRoute
@@ -517,12 +518,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsBackupRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/sifre': {
-      id: '/auth/sifre'
-      path: '/sifre'
+    '/auth_/sifre': {
+      id: '/auth_/sifre'
+      path: '/auth/sifre'
       fullPath: '/auth/sifre'
       preLoaderRoute: typeof AuthSifreRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/backup': {
       id: '/api/backup'
@@ -534,20 +535,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthRouteChildren {
-  AuthSifreRoute: typeof AuthSifreRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthSifreRoute: AuthSifreRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
-  AuthRoute: AuthRouteWithChildren,
+  AuthRoute: AuthRoute,
   CompaniesRoute: CompaniesRoute,
   ExpensesRoute: ExpensesRoute,
   FilesRoute: FilesRoute,
@@ -562,6 +553,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   ApiBackupRoute: ApiBackupRoute,
+  AuthSifreRoute: AuthSifreRoute,
   SettingsBackupRoute: SettingsBackupRoute,
   SettingsBildirimlerRoute: SettingsBildirimlerRoute,
   SettingsKategorilerRoute: SettingsKategorilerRoute,

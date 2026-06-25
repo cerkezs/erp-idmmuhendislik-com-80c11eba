@@ -8,7 +8,7 @@ import { AppShell } from "@/components/app-shell";
 import { me, changePassword, setupTotp, confirmTotp, disableTotp } from "@/lib/auth.functions";
 import { ShieldCheck, KeyRound } from "lucide-react";
 
-export const Route = createFileRoute("/auth/sifre")({
+export const Route = createFileRoute("/auth_/sifre")({
   component: PasswordPage,
 });
 
