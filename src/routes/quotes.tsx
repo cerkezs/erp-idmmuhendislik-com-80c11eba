@@ -43,6 +43,16 @@ function QuotesPage() {
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quotes"] }),
   });
+  const convertMut = useMutation({
+    mutationFn: (quote_id: number) => convert({ data: { quote_id } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["quotes"] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      alert(`Fatura oluşturuldu: ${res.number}`);
+      router.navigate({ to: "/invoices" });
+    },
+    onError: (e) => alert("Hata: " + (e as Error).message),
+  });
 
   async function openEdit(id: number) {
     setLoadingEdit(true);
