@@ -1475,3 +1475,269 @@ export async function _internalGetDefaultMailAccount(): Promise<Record<string, u
   return def ? (fromTr(def, MH_MAP) as Record<string, unknown>) : null;
 }
 
+// ============================================================
+// ============= İŞ AKIŞI / OTOMASYON FONKSİYONLARI ===========
+// ============================================================
+
+// Teklif → Fatura otomasyonu
+export const convertQuoteToInvoice = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ quote_id: z.number(), number: z.string().optional() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    // teklifi al
+    const teklifId = await getTableId("teklifler");
+    const row = await nc<Record_>(`/api/v2/tables/${teklifId}/records/${data.quote_id}`);
+    const q = fromTr(row, TEKLIF_MAP) as Record<string, JsonValue>;
+    const kalemTable = await getTableId("teklif_kalemleri");
+    const where = encodeURIComponent(`(teklif_id,eq,${data.quote_id})`);
+    const items = await nc<{ list: Record_[] }>(
+      `/api/v2/tables/${kalemTable}/records?where=${where}&limit=500`,
+    );
+    const itemsArr = (items.list || []).map((r) => fromTr(r, TEKLIF_KALEM_MAP));
+
+    // fatura no üret
+    const numara = data.number || `FT-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
+    const today = new Date().toISOString().slice(0, 10);
+    const due = new Date(); due.setDate(due.getDate() + 30);
+
+    const invoiceItems = itemsArr.map((it) => ({
+      product_id: (it.product_id as number) ?? null,
+      description: (it.description as string) || "",
+      qty: Number(it.qty) || 1,
+      unit_price: Number(it.unit_price) || 0,
+      vat_rate: Number(it.vat_rate) || 20,
+    }));
+    const t = computeTotals(invoiceItems);
+
+    const header = toTr(
+      {
+        number: numara,
+        company_id: (q.company_id as number) ?? null,
+        company_name: (q.company_name as string) || "",
+        date: today,
+        due_date: due.toISOString().slice(0, 10),
+        status: "Taslak",
+        currency: (q.currency as string) || "TRY",
+        notes: `Teklif #${q.number || data.quote_id} kaynaklı`,
+        subtotal: t.subtotal, vat_total: t.vat_total, total: t.total,
+      },
+      FATURA_MAP,
+    );
+    const faturaTable = await getTableId("faturalar");
+    const created = await nc<Record_>(`/api/v2/tables/${faturaTable}/records`, {
+      method: "POST", body: JSON.stringify(header),
+    });
+    const faturaId = created.Id as number;
+    const faturaKalemTable = await getTableId("fatura_kalemleri");
+    await replaceItems(faturaKalemTable, "fatura_id", faturaId, invoiceItems, FATURA_KALEM_MAP);
+
+    // teklif durumunu güncelle
+    await nc(`/api/v2/tables/${teklifId}/records`, {
+      method: "PATCH",
+      body: JSON.stringify({ Id: data.quote_id, durum: "Faturalandı" }),
+    });
+
+    // bildirim
+    await createRecord("bildirimler", toTr({
+      date: today, type: "success", title: "Teklif faturaya çevrildi",
+      message: `${q.company_name || ""} · ${numara}`,
+      link: `/invoices`, read: false, user: "",
+    }, BILDIRIM_MAP));
+
+    return { invoice_id: faturaId, number: numara };
+  });
+
+// Fatura ödendi → kasaya gelir hareketi
+export const payInvoice = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      invoice_id: z.number(),
+      account_id: z.number(),
+      date: z.string().optional(),
+      amount: z.number().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const faturaTable = await getTableId("faturalar");
+    const row = await nc<Record_>(`/api/v2/tables/${faturaTable}/records/${data.invoice_id}`);
+    const inv = fromTr(row, FATURA_MAP);
+    const amount = data.amount ?? Number(inv.total) ?? 0;
+    const today = data.date || new Date().toISOString().slice(0, 10);
+
+    // kasa adı
+    const accRow = await nc<Record_>(`/api/v2/tables/${await getTableId("kasalar")}/records/${data.account_id}`);
+    const acc = fromTr(accRow, KASA_MAP);
+
+    await createRecord("kasa_hareketleri", toTr({
+      date: today, account_id: data.account_id,
+      account_name: (acc.name as string) || "",
+      type: "Gelir", amount, currency: (inv.currency as string) || "TRY",
+      fx_rate: 1,
+      description: `Fatura tahsilatı — ${inv.number || data.invoice_id} · ${inv.company_name || ""}`,
+      reference: String(inv.number || data.invoice_id),
+    }, KASA_HAR_MAP));
+
+    await nc(`/api/v2/tables/${faturaTable}/records`, {
+      method: "PATCH",
+      body: JSON.stringify({ Id: data.invoice_id, durum: "Ödendi" }),
+    });
+
+    await createRecord("bildirimler", toTr({
+      date: today, type: "success", title: "Fatura tahsil edildi",
+      message: `${inv.number || data.invoice_id} · ${amount.toLocaleString("tr-TR")} ${inv.currency || "TRY"}`,
+      link: `/kasa`, read: false, user: "",
+    }, BILDIRIM_MAP));
+
+    return { ok: true };
+  });
+
+// Gider → kasadan çıkış (opsiyonel)
+export const createExpenseWithCash = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      expense: ExpenseInput,
+      account_id: z.number().nullable().optional(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const created = await createRecord("giderler", toTr(data.expense, GIDER_MAP));
+    if (data.account_id) {
+      const accRow = await nc<Record_>(`/api/v2/tables/${await getTableId("kasalar")}/records/${data.account_id}`);
+      const acc = fromTr(accRow, KASA_MAP);
+      await createRecord("kasa_hareketleri", toTr({
+        date: data.expense.date || new Date().toISOString().slice(0, 10),
+        account_id: data.account_id,
+        account_name: (acc.name as string) || "",
+        type: "Gider", amount: data.expense.amount || 0,
+        currency: data.expense.currency || "TRY",
+        fx_rate: data.expense.fx_rate || 1,
+        description: `${data.expense.category || "Gider"} — ${data.expense.description || ""}`,
+        reference: data.expense.receipt_no || "",
+      }, KASA_HAR_MAP));
+    }
+    return fromTr(created, GIDER_MAP);
+  });
+
+// Üretim tamamlandı → ürün stoğunu artır
+export const completeProduction = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
+  .handler(async ({ data }) => {
+    const tbl = await getTableId("uretim_emirleri");
+    const row = await nc<Record_>(`/api/v2/tables/${tbl}/records/${data.id}`);
+    const p = fromTr(row, URETIM_MAP);
+    if (p.status === "Tamamlandı") return { ok: true, already: true };
+
+    // ürün stok güncelle
+    if (p.product_id) {
+      const urunTbl = await getTableId("urunler");
+      try {
+        const ur = await nc<Record_>(`/api/v2/tables/${urunTbl}/records/${p.product_id}`);
+        const u = fromTr(ur, URUN_MAP);
+        const newStock = (Number(u.stock) || 0) + (Number(p.qty) || 0);
+        await nc(`/api/v2/tables/${urunTbl}/records`, {
+          method: "PATCH", body: JSON.stringify({ Id: p.product_id, stok: newStock }),
+        });
+      } catch { /* ürün silinmiş olabilir */ }
+    }
+
+    await nc(`/api/v2/tables/${tbl}/records`, {
+      method: "PATCH",
+      body: JSON.stringify({ Id: data.id, durum: "Tamamlandı", bitis: new Date().toISOString().slice(0, 10) }),
+    });
+
+    await createRecord("bildirimler", toTr({
+      date: new Date().toISOString().slice(0, 10), type: "success",
+      title: "Üretim tamamlandı",
+      message: `${p.number || data.id} · ${p.product_name || ""} (${p.qty || 0} adet stoğa eklendi)`,
+      link: "/productions", read: false, user: "",
+    }, BILDIRIM_MAP));
+
+    return { ok: true };
+  });
+
+// Dashboard özet
+export const dashboardSummary = createServerFn({ method: "GET" }).handler(async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const monthStart = today.slice(0, 7) + "-01";
+
+  // paralel
+  const [accs, moves, invs, exps, prods, notifs] = await Promise.all([
+    listRecords("kasalar", 200).catch(() => [] as Record_[]),
+    listRecords("kasa_hareketleri", 1000).catch(() => [] as Record_[]),
+    listRecords("faturalar", 500).catch(() => [] as Record_[]),
+    listRecords("giderler", 500).catch(() => [] as Record_[]),
+    listRecords("uretim_emirleri", 500).catch(() => [] as Record_[]),
+    listRecords("bildirimler", 100).catch(() => [] as Record_[]),
+  ]);
+
+  // Kasa bakiyesi (TRY karşılığı)
+  let kasaBakiye = 0;
+  for (const a of accs) {
+    const ab = Number((a as Record<string, unknown>).acilis_bakiye) || 0;
+    kasaBakiye += ab;
+  }
+  let ayTahsilat = 0, ayGider = 0;
+  for (const m of moves) {
+    const r = m as Record<string, unknown>;
+    const tutar = (Number(r.tutar) || 0) * (Number(r.kur) || 1);
+    if (r.tur === "Gelir") { kasaBakiye += tutar; if ((r.tarih as string) >= monthStart) ayTahsilat += tutar; }
+    else if (r.tur === "Gider") { kasaBakiye -= tutar; if ((r.tarih as string) >= monthStart) ayGider += tutar; }
+  }
+  for (const e of exps) {
+    const r = e as Record<string, unknown>;
+    if ((r.tarih as string) >= monthStart) ayGider += (Number(r.tutar) || 0) * (Number(r.kur) || 1);
+  }
+
+  // Bekleyen alacak: durum != Ödendi & İptal
+  let bekleyenAlacak = 0, vadesiGecmis = 0;
+  const openInvs: Array<{ Id: number; number?: string; company_name?: string; total: number; due_date?: string; overdue: boolean }> = [];
+  for (const i of invs) {
+    const r = i as Record<string, unknown>;
+    const durum = (r.durum as string) || "Taslak";
+    if (durum === "Ödendi" || durum === "İptal") continue;
+    const total = Number(r.genel_toplam) || 0;
+    bekleyenAlacak += total;
+    const overdue = !!(r.vade_tarihi && (r.vade_tarihi as string) < today);
+    if (overdue) vadesiGecmis += 1;
+    openInvs.push({
+      Id: r.Id as number, number: r.numara as string, company_name: r.firma_adi as string,
+      total, due_date: r.vade_tarihi as string, overdue,
+    });
+  }
+
+  // Üretim
+  const activeProductions = prods.filter((p) => {
+    const d = (p as Record<string, unknown>).durum;
+    return d !== "Tamamlandı" && d !== "İptal";
+  }).length;
+
+  // Son hareketler (son 8 bildirim)
+  const recent = (notifs as Record_[])
+    .slice(0, 10)
+    .map((r) => ({
+      Id: r.Id as number,
+      date: r.tarih as string, type: r.tur as string,
+      title: r.baslik as string, message: r.mesaj as string,
+      link: r.link as string, read: !!r.okundu,
+    }));
+
+  return {
+    kasaBakiye, kasaCount: accs.length,
+    bekleyenAlacak, vadesiGecmis, openInvoiceCount: openInvs.length,
+    ayTahsilat, ayGider,
+    activeProductions, totalProductions: prods.length,
+    recent,
+    openInvoices: openInvs.sort((a, b) => (a.due_date || "").localeCompare(b.due_date || "")).slice(0, 6),
+  };
+});
+
+// Okunmamış bildirim sayısı
+export const unreadCount = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const rows = await listRecords("bildirimler", 500);
+    const n = rows.filter((r) => !(r as Record<string, unknown>).okundu).length;
+    return { count: n };
+  } catch { return { count: 0 }; }
+});
+
