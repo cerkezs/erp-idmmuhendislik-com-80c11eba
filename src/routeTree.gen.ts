@@ -22,6 +22,7 @@ import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as FilesRouteImport } from './routes/files'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsSunucuRouteImport } from './routes/settings_.sunucu'
@@ -98,6 +99,11 @@ const CompaniesRoute = CompaniesRouteImport.update({
   path: '/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActionsRoute = ActionsRouteImport.update({
   id: '/actions',
   path: '/actions',
@@ -152,6 +158,7 @@ const ApiBackupRoute = ApiBackupRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/actions'
+    | '/auth'
     | '/companies'
     | '/expenses'
     | '/files'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/actions'
+    | '/auth'
     | '/companies'
     | '/expenses'
     | '/files'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/actions'
+    | '/auth'
     | '/companies'
     | '/expenses'
     | '/files'
@@ -306,6 +318,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
+  AuthRoute: typeof AuthRoute
   CompaniesRoute: typeof CompaniesRoute
   ExpensesRoute: typeof ExpensesRoute
   FilesRoute: typeof FilesRoute
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/actions': {
       id: '/actions'
       path: '/actions'
@@ -498,6 +518,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
+  AuthRoute: AuthRoute,
   CompaniesRoute: CompaniesRoute,
   ExpensesRoute: ExpensesRoute,
   FilesRoute: FilesRoute,
