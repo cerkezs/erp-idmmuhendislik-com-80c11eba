@@ -22,10 +22,12 @@ type Quote = {
 
 function QuotesPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const list = useServerFn(listQuotes);
   const get = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
   const remove = useServerFn(deleteQuote);
+  const convert = useServerFn(convertQuoteToInvoice);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["quotes"], queryFn: () => list() });
 
