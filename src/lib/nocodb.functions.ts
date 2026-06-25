@@ -1380,6 +1380,12 @@ export async function _internalCountUsers(): Promise<number> {
   const rows = await listRecords("kullanicilar", 200);
   return rows.length;
 }
+export async function _internalEnsureAuthSchema(): Promise<void> {
+  const baseId = await ensureBase();
+  await ensureTable(baseId, "kullanicilar", TABLES.kullanicilar);
+  await ensureTable(baseId, "oturum_loglari", TABLES.oturum_loglari);
+  tableCache = null;
+}
 export async function _internalListNotificationsRaw(): Promise<Record_[]> {
   return listRecords("bildirimler", 500);
 }

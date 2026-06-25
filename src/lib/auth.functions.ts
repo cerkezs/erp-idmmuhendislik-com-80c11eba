@@ -11,6 +11,7 @@ import {
   _internalCreateUserRaw,
   _internalLogLogin,
   _internalCountUsers,
+  _internalEnsureAuthSchema,
 } from "./nocodb.functions";
 
 export type SessionUser = {
@@ -39,11 +40,26 @@ function clientIp(req: Request | null): string {
 
 // ------------- ensure first admin -------------
 async function ensureBootstrapAdmin(): Promise<{ created: boolean; email?: string; tempPassword?: string }> {
-  const count = await _internalCountUsers();
-  if (count > 0) return { created: false };
+  await _internalEnsureAuthSchema();
   const email = "admin@idmmuhendislik.com";
+  const existing = await _internalFindUserByEmail(email);
   const tempPassword = "IDM-" + Math.random().toString(36).slice(2, 10) + "!";
   const hash = await bcrypt.hash(tempPassword, 10);
+  if (existing) {
+    // Repair: account exists but parola_hash missing/blank (older bootstrap before column existed)
+    if (!String(existing.parola_hash || "")) {
+      await _internalUpdateUserRaw(existing.Id as number, {
+        parola_hash: hash,
+        sifre_degistir: true,
+        aktif: true,
+        rol: existing.rol || "admin",
+      });
+      return { created: true, email, tempPassword };
+    }
+    return { created: false };
+  }
+  const count = await _internalCountUsers();
+  if (count > 0) return { created: false };
   await _internalCreateUserRaw({
     ad: "Yönetici",
     eposta: email,
