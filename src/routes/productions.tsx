@@ -120,6 +120,16 @@ function ProductionsPage() {
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["productions"] }),
   });
+  const completeFn = useServerFn(completeProduction);
+  const completeMut = useMutation({
+    mutationFn: (id: number) => completeFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productions"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
+    onError: (e) => alert("Hata: " + (e as Error).message),
+  });
 
   const [editing, setEditing] = useState<Production | null>(null);
   const [open, setOpen] = useState(false);
