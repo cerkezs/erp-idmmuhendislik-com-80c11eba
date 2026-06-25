@@ -11,7 +11,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  listExpenses, createExpense, updateExpense, deleteExpense,
+  listExpenses, createExpenseWithCash, updateExpense, deleteExpense, listAccounts,
 } from "@/lib/nocodb.functions";
 import { Receipt, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
 
