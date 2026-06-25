@@ -218,6 +218,19 @@ function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; em
       )}
 
       <div className="flex items-center gap-2">
+        <Link
+          to="/notifications"
+          className="relative rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+          title="Bildirimler"
+          aria-label="Bildirimler"
+        >
+          <Bell className="h-4 w-4" />
+          {unreadQ.data && unreadQ.data.count > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+              {unreadQ.data.count > 99 ? "99+" : unreadQ.data.count}
+            </span>
+          )}
+        </Link>
         <div className="hidden flex-col items-end leading-tight sm:flex">
           <span className="text-xs font-medium">{user.name || user.email}</span>
           <span className="text-[10px] uppercase text-muted-foreground">{user.role}</span>
