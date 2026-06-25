@@ -133,7 +133,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function TopBar({ onMenu }: { onMenu: () => void }) {
+function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; email: string; role: string; mustChangePassword?: boolean } }) {
+  const router = useRouter();
+  const qc = useQueryClient();
   const { data, isFetching, refetch } = useQuery({
     queryKey: ["tcmb-rates"],
     queryFn: () => getRates(),
@@ -146,6 +148,22 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
   const eur = fmt(data?.eur);
   const last = data?.time ?? "—";
   const label = data?.source === "tcmb" ? "TCMB" : "—";
+
+  const initials = (user.name || user.email || "?")
+    .split(/\s+/)
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  async function handleLogout() {
+    try {
+      await logout();
+    } finally {
+      qc.removeQueries({ queryKey: ["auth-me"] });
+      router.navigate({ to: "/auth" as never });
+    }
+  }
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border bg-background/95 px-3 backdrop-blur sm:px-6">
@@ -176,7 +194,6 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
             <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
-        {/* Mobil özet */}
         <div className="flex items-center gap-2 sm:hidden">
           <span className="rounded-md bg-muted px-2 py-1 text-[11px] tabular-nums">
             $ {usd} · € {eur}
@@ -184,8 +201,31 @@ function TopBar({ onMenu }: { onMenu: () => void }) {
         </div>
       </div>
 
-      <div className="hidden h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground sm:grid">
-        <span className="text-xs font-medium">YK</span>
+      {user.mustChangePassword && (
+        <Link
+          to={"/auth/sifre" as never}
+          className="hidden items-center gap-1 rounded-md bg-amber-500/15 px-2 py-1 text-[11px] font-medium text-amber-700 sm:flex"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" /> Parolanı değiştir
+        </Link>
+      )}
+
+      <div className="flex items-center gap-2">
+        <div className="hidden flex-col items-end leading-tight sm:flex">
+          <span className="text-xs font-medium">{user.name || user.email}</span>
+          <span className="text-[10px] uppercase text-muted-foreground">{user.role}</span>
+        </div>
+        <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground">
+          <span className="text-xs font-medium">{initials}</span>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+          title="Çıkış yap"
+          aria-label="Çıkış yap"
+        >
+          <LogOut className="h-4 w-4" />
+        </button>
       </div>
     </header>
   );
