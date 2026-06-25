@@ -119,7 +119,7 @@ function KullanicilarPage() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">Not: Şu an şifre / oturum açma yok — yalnızca kayıt amaçlıdır. İleride Lovable Cloud ile gerçek kimlik doğrulama eklenebilir.</p>
+        <p className="mt-3 text-xs text-muted-foreground">İpucu: Yeni eklenen kullanıcının giriş yapabilmesi için <strong>Parola sıfırla</strong> ile bir geçici parola ayarlayın. Kullanıcı ilk girişten sonra parolayı değiştirmeye yönlendirilir. İki adımlı doğrulamayı kullanıcının kendisi <em>Ayarlar → Hesabım & Güvenlik</em> üzerinden etkinleştirir.</p>
       </div>
     </AppShell>
   );
