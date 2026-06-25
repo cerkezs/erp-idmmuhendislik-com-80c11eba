@@ -119,7 +119,7 @@ export const login = createServerFn({ method: "POST" })
       const secret = String(row.totp_secret || "");
       if (!secret) return { ok: false as const, error: "TOTP yapılandırılmamış — yöneticinizle iletişime geçin" };
       if (!data.totp) return { ok: false as const, needsTotp: true as const };
-      const ok = authenticator.check(data.totp.replace(/\s+/g, ""), secret);
+      const ok = (await verify({ token: data.totp.replace(/\s+/g, ""), secret, epochTolerance: 1 })).valid;
       if (!ok) {
         await _internalLogLogin({
           tarih: new Date().toISOString(),
@@ -211,8 +211,8 @@ export const setupTotp = createServerFn({ method: "POST" }).handler(async () => 
   const session = await getSession();
   const u = session.data.user;
   if (!u) return { ok: false as const, error: "Oturum yok" };
-  const secret = authenticator.generateSecret();
-  const otpauth = authenticator.keyuri(u.email, "IDM ERP", secret);
+  const secret = generateSecret();
+  const otpauth = generateURI({ issuer: "IDM ERP", label: u.email, secret });
   const qr = await QRCode.toDataURL(otpauth);
   await _internalUpdateUserRaw(u.id, { totp_secret: secret, totp_aktif: false });
   return { ok: true as const, secret, otpauth, qr };
@@ -228,7 +228,7 @@ export const confirmTotp = createServerFn({ method: "POST" })
     const row = await _internalGetUser(u.id);
     const secret = String(row?.totp_secret || "");
     if (!secret) return { ok: false as const, error: "Önce TOTP kurulumu başlat" };
-    const ok = authenticator.check(data.code.replace(/\s+/g, ""), secret);
+    const ok = (await verify({ token: data.code.replace(/\s+/g, ""), secret, epochTolerance: 1 })).valid;
     if (!ok) return { ok: false as const, error: "Kod hatalı" };
     await _internalUpdateUserRaw(u.id, { totp_aktif: true });
     return { ok: true as const };
