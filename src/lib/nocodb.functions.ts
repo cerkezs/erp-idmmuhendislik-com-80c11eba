@@ -132,6 +132,8 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "kur", uidt: "Decimal" },
     { title: "aciklama", uidt: "LongText" },
     { title: "referans", uidt: "SingleLineText" },
+    { title: "kaynak_tip", uidt: "SingleLineText" },
+    { title: "kaynak_id", uidt: "Number" },
   ],
   bildirimler: [
     { title: "tarih", uidt: "DateTime" },
@@ -141,6 +143,9 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "link", uidt: "SingleLineText" },
     { title: "okundu", uidt: "Checkbox" },
     { title: "kullanici", uidt: "SingleLineText" },
+    { title: "kaynak_tip", uidt: "SingleLineText" },
+    { title: "kaynak_id", uidt: "Number" },
+    { title: "dedup", uidt: "SingleLineText" },
   ],
   uretim_emirleri: [
     { title: "numara", uidt: "SingleLineText" },
