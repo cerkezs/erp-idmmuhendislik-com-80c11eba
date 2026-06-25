@@ -196,6 +196,7 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "boyut", uidt: "SingleLineText" },
     { title: "tur", uidt: "SingleLineText" },
     { title: "notlar", uidt: "LongText" },
+    { title: "attachment", uidt: "Attachment" },
   ],
   mail_log: [
     { title: "tarih", uidt: "DateTime" },
