@@ -10,7 +10,8 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { listUsers, createUser, updateUser, deleteUser } from "@/lib/nocodb.functions";
-import { Users, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { adminResetPassword, adminResetTotp } from "@/lib/auth.functions";
+import { Users, Plus, Pencil, Trash2, Loader2, KeyRound, ShieldOff } from "lucide-react";
 
 export const Route = createFileRoute("/settings_/kullanicilar")({
   head: () => ({ meta: [{ title: "Kullanıcılar — Ayarlar" }] }),
