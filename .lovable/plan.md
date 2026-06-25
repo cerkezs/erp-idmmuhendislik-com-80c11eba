@@ -1,75 +1,27 @@
-# Roundcube kurulum hatasını çözme planı
+ERP'nin /mail rotasını Roundcube webmail paneli olarak yeniden tasarlayacağız.
 
-**Hata:** `ERROR 2002 (HY000): Can't connect to local server through socket '/run/mysqld/mysqld.sock'`
+## Yapılacaklar
 
-Bu hata, Roundcube veritabanını kurmaya çalışırken MySQL/MariaDB sunucusunun çalışmadığını (veya hiç kurulu olmadığını) gösteriyor. `dbconfig-common` bağlanacak bir DB bulamadığı için patlıyor.
+1. `/mail` rotası değiştirilir
+   - Mevcut "Mail Gönderim & Log" tablo/arayüzü kalır (alt sekme veya ayrı bölüm olarak).
+   - Ana görünüm: tam boy iframe içinde `https://webmail.idmmuhendislik.com`.
+   - Sidebar'daki "Mail" menüsü bu sayfaya yönlendirir.
 
-## Çözüm adımları (VPS'te SSH ile sırayla)
+2. iframe güvenlik & stil
+   - `sandbox` ve `allow` attribute'ları doğru ayarlanır (allow-same-origin, allow-scripts, allow-forms, allow-popups).
+   - iframe yüklenene kadar skeleton/loading spinner gösterilir.
+   - Yükseklik: ekran boyutuna göre dinamik (`h-[calc(100vh-...)]`).
 
-### 1) Şu anki diyaloğu kapat
-Ekrandaki menüde **`abort`** seçip Enter'a bas. (retry işe yaramaz çünkü MariaDB hâlâ kapalı olacak.)
+3. SSO / Otomatik Giriş (opsiyonel — ilk aşamada manuel)
+   - Roundcube'nin IMAP auth'u zaten kendi başına çalışıyor.
+   - ERP kullanıcısı ile mail kullanıcısı aynı değilse, otomatik giriş için Roundcube remote auth veya plugin gerekir; bu sunucu tarafı yapılandırma ister.
+   - **İlk versiyonda kullanıcı iframe içinde kendi mail şifresiyle Roundcube'e manuel giriş yapar.** SSO daha sonra sunucu tarafı hazır olunca eklenebilir.
 
-### 2) MariaDB'yi kur ve başlat
-```bash
-sudo apt update
-sudo apt install -y mariadb-server
-sudo systemctl enable --now mariadb
-sudo systemctl status mariadb     # "active (running)" görmelisin
-```
-Soket kontrolü:
-```bash
-ls -l /run/mysqld/mysqld.sock
-```
+4. Ek:
+   - Sayfa başlığı: "Webmail — IDM ERP"
+   - Responsive: mobilde iframe alt alta kaydırmalı, sidebar daraltmalı.
 
-### 3) Root parolasını ayarla (opsiyonel ama önerilir)
-```bash
-sudo mysql_secure_installation
-```
-- Root parolası belirle
-- Anonymous users → Y
-- Disallow root login remotely → Y
-- Remove test database → Y
-- Reload privileges → Y
-
-### 4) Roundcube için DB ve kullanıcı oluştur
-```bash
-sudo mysql -u root -p <<'SQL'
-CREATE DATABASE roundcube CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE USER 'roundcube'@'localhost' IDENTIFIED BY 'GÜÇLÜ_BİR_ŞİFRE_KOY';
-GRANT ALL PRIVILEGES ON roundcube.* TO 'roundcube'@'localhost';
-FLUSH PRIVILEGES;
-SQL
-```
-> `GÜÇLÜ_BİR_ŞİFRE_KOY` kısmını gerçek bir şifre ile değiştir ve bir yere not et.
-
-### 5) Roundcube kurulumunu yeniden tetikle
-```bash
-sudo dpkg --configure -a
-# veya kuruluma kaldığı yerden devam:
-sudo apt install -y --reinstall roundcube roundcube-core roundcube-mysql
-```
-Bu sefer `dbconfig-common` sorduğunda:
-- **Yes** → veritabanını yapılandır
-- Database type: **MySQL** (MariaDB için bunu seç)
-- Yukarıda oluşturduğun roundcube kullanıcı şifresini gir
-
-### 6) Doğrulama
-```bash
-sudo systemctl status mariadb php8.3-fpm nginx
-mysql -u roundcube -p -e "SHOW TABLES;" roundcube
-```
-Tablolar listelenmeli (users, sessions, cache, vb.).
-
-Ardından önceki plandaki **Nginx vhost + SSL + Roundcube config** adımlarına devam edebilirsin.
-
-## Olası ek sorunlar
-
-- **PHP sürümü uyuşmazlığı** → `php -v` ile kontrol et, vhost'taki `php8.3-fpm.sock` yolunu kurulu sürüme göre düzelt.
-- **MariaDB başlamıyor** → `sudo journalctl -u mariadb -n 50` ile log bak. Genelde disk dolu veya `/var/lib/mysql` izinleri bozuk olur:
-  ```bash
-  sudo chown -R mysql:mysql /var/lib/mysql
-  sudo systemctl restart mariadb
-  ```
-- **Port 3306 dış dünyaya açık olmasın** → UFW kullanıyorsan sadece localhost: MariaDB varsayılan olarak `bind-address = 127.0.0.1`, dokunma.
-
-Onaylarsan bu adımları sırayla uygulayıp sonuçlarını birlikte değerlendirelim. Şu an SSH konsoluna senin yazman gerekiyor (Lovable VPS'ine bağlanamıyor) — ben her adımın çıktısına göre yönlendiririm.
+## Teknik detaylar
+- Dosya: `src/routes/mail.tsx` üzerinde değişiklik.
+- Cross-origin iframe olacağı için `referrerPolicy` ve gerekirse `credentialless` değerlendirilir.
+- Mevcut mail log tablosu (eski /mail içeriği) `src/routes/settings_.mail-log.tsx` gibi bir alt sayfaya taşınabilir VEYA aynı sayfada alt sekme (Tabs) olarak bırakılabilir. Henüz karar verilmedi.
