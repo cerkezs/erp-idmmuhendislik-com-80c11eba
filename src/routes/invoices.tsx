@@ -126,9 +126,25 @@ function InvoicesPage() {
                 <td className="px-3 py-2">{q.company_name || "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{q.date || "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{q.due_date || "—"}</td>
-                <td className="px-3 py-2"><span className="rounded bg-muted px-2 py-0.5 text-xs">{q.status || "Taslak"}</span></td>
+                <td className="px-3 py-2">
+                  <span className={"rounded px-2 py-0.5 text-xs " + (
+                    q.status === "Ödendi" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" :
+                    q.status === "İptal" ? "bg-red-500/15 text-red-600" :
+                    "bg-muted"
+                  )}>{q.status || "Taslak"}</span>
+                </td>
                 <td className="px-3 py-2 text-right tabular-nums">{(q.total ?? 0).toLocaleString("tr-TR")} {q.currency || "TRY"}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  {q.status !== "Ödendi" && q.status !== "İptal" && (
+                    <Button variant="ghost" size="sm" title="Ödendi olarak işaretle & kasaya işle"
+                      onClick={() => {
+                        setPaying(q);
+                        setPayAccount(accountsQ.data?.[0]?.Id as number ?? null);
+                        setPayDate(new Date().toISOString().slice(0, 10));
+                      }}>
+                      <BadgeDollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => openEdit(q.Id)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
