@@ -86,9 +86,10 @@ function ExpensesPage() {
           </DialogTrigger>
           <ExpenseForm
             initial={editing}
-            onSubmit={async (vals) => {
+            accounts={(accountsQ.data || []) as Array<{ Id: number; name?: string; currency?: string }>}
+            onSubmit={async (vals, accountId) => {
               if (editing) await updateMut.mutateAsync({ id: editing.Id, patch: vals });
-              else await createMut.mutateAsync(vals);
+              else await createMut.mutateAsync({ expense: vals, account_id: accountId });
               setOpen(false); setEditing(null);
             }}
             submitting={createMut.isPending || updateMut.isPending}
