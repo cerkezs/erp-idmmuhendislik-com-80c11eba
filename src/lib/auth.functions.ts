@@ -3,7 +3,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { generateSecret, generateURI, verify } from "otplib";
-import QRCode from "qrcode";
 import {
   _internalFindUserByEmail,
   _internalGetUser,
@@ -30,6 +29,15 @@ async function getSession() {
 async function sealCurrentSession() {
   const mod = await import("./auth.server");
   return mod.sealCurrentSession();
+}
+
+async function qrSvgDataUrl(text: string): Promise<string> {
+  // Use the browser/SVG renderer only. The default qrcode server entry pulls in pngjs streams,
+  // which breaks in the published worker runtime before login can even run.
+  const mod = await import("qrcode/lib/browser.js");
+  const renderer = mod.default ?? mod;
+  const svg = await renderer.toString(text, { type: "svg" });
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
 
@@ -221,7 +229,7 @@ export const setupTotp = createServerFn({ method: "POST" }).handler(async () => 
   if (!u) return { ok: false as const, error: "Oturum yok" };
   const secret = generateSecret();
   const otpauth = generateURI({ issuer: "IDM ERP", label: u.email, secret });
-  const qr = await QRCode.toDataURL(otpauth);
+  const qr = await qrSvgDataUrl(otpauth);
   await _internalUpdateUserRaw(u.id, { totp_secret: secret, totp_aktif: false });
   return { ok: true as const, secret, otpauth, qr };
 });
