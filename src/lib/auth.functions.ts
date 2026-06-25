@@ -21,27 +21,11 @@ export type SessionUser = {
   mustChangePassword?: boolean;
 };
 
-type SessionData = { user?: SessionUser };
-
-function sessionConfig() {
-  const password = process.env.SESSION_SECRET || "dev-secret-please-rotate-at-least-32-chars-long";
-  return {
-    password,
-    name: "idm-erp-session",
-    maxAge: 60 * 60 * 24 * 14,
-    cookie: {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax" as const,
-      path: "/",
-    },
-  };
-}
-
 async function getSession() {
-  const { useSession } = await import("@tanstack/react-start/server");
-  return useSession<SessionData>(sessionConfig());
+  const mod = await import("./auth.server");
+  return mod.getSession();
 }
+
 
 function clientIp(req: Request | null): string {
   if (!req) return "";
