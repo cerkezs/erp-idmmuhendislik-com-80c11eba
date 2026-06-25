@@ -14,9 +14,9 @@ import {
 import {
   listProductions, createProduction, updateProduction, deleteProduction,
   listStages, createStage, updateStage, deleteStage,
-  listCompanies, listProducts,
+  listCompanies, listProducts, completeProduction,
 } from "@/lib/nocodb.functions";
-import { Factory, Plus, Pencil, Trash2, Loader2, AlertCircle, ChevronDown, ChevronRight, Search, X, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Factory, Plus, Pencil, Trash2, Loader2, AlertCircle, ChevronDown, ChevronRight, Search, X, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/productions")({
   head: () => ({ meta: [{ title: "Üretim — IDM ERP" }] }),
