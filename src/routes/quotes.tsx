@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -6,9 +6,9 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { DocumentForm, type DocData } from "@/components/document-form";
 import {
-  listQuotes, getQuote, saveQuote, deleteQuote,
+  listQuotes, getQuote, saveQuote, deleteQuote, convertQuoteToInvoice,
 } from "@/lib/nocodb.functions";
-import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowRightCircle } from "lucide-react";
 
 export const Route = createFileRoute("/quotes")({
   head: () => ({ meta: [{ title: "Teklifler — IDM ERP" }] }),
@@ -22,10 +22,12 @@ type Quote = {
 
 function QuotesPage() {
   const qc = useQueryClient();
+  const router = useRouter();
   const list = useServerFn(listQuotes);
   const get = useServerFn(getQuote);
   const save = useServerFn(saveQuote);
   const remove = useServerFn(deleteQuote);
+  const convert = useServerFn(convertQuoteToInvoice);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["quotes"], queryFn: () => list() });
 
@@ -40,6 +42,16 @@ function QuotesPage() {
   const delMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quotes"] }),
+  });
+  const convertMut = useMutation({
+    mutationFn: (quote_id: number) => convert({ data: { quote_id } }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["quotes"] });
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      alert(`Fatura oluşturuldu: ${res.number}`);
+      router.navigate({ to: "/invoices" });
+    },
+    onError: (e) => alert("Hata: " + (e as Error).message),
   });
 
   async function openEdit(id: number) {
@@ -107,7 +119,16 @@ function QuotesPage() {
                 <td className="px-3 py-2 text-muted-foreground">{q.valid_until || "—"}</td>
                 <td className="px-3 py-2"><span className="rounded bg-muted px-2 py-0.5 text-xs">{q.status || "Taslak"}</span></td>
                 <td className="px-3 py-2 text-right tabular-nums">{(q.total ?? 0).toLocaleString("tr-TR")} {q.currency || "TRY"}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  {q.status !== "Faturalandı" && (
+                    <Button variant="ghost" size="sm" title="Faturaya çevir"
+                      disabled={convertMut.isPending}
+                      onClick={() => {
+                        if (confirm(`"${q.number || q.Id}" teklifinden fatura oluşturulsun mu?`)) convertMut.mutate(q.Id);
+                      }}>
+                      <ArrowRightCircle className="h-3.5 w-3.5 text-emerald-600" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => openEdit(q.Id)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>

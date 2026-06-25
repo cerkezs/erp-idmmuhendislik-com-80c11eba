@@ -11,7 +11,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  listExpenses, createExpense, updateExpense, deleteExpense,
+  listExpenses, createExpenseWithCash, updateExpense, deleteExpense, listAccounts,
 } from "@/lib/nocodb.functions";
 import { Receipt, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
 
@@ -32,18 +32,24 @@ const CATEGORIES = ["Yakıt", "Malzeme", "Kira", "Maaş", "Vergi", "Yemek", "Ula
 function ExpensesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listExpenses);
-  const create = useServerFn(createExpense);
+  const create = useServerFn(createExpenseWithCash);
   const update = useServerFn(updateExpense);
   const remove = useServerFn(deleteExpense);
+  const accountsFn = useServerFn(listAccounts);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["expenses"],
     queryFn: () => list(),
   });
+  const accountsQ = useQuery({ queryKey: ["accounts"], queryFn: () => accountsFn() });
 
   const createMut = useMutation({
-    mutationFn: (d: Omit<Expense, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
+    mutationFn: (v: { expense: Omit<Expense, "Id">; account_id: number | null }) => create({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Expense> }) => update({ data: v }),
@@ -80,9 +86,10 @@ function ExpensesPage() {
           </DialogTrigger>
           <ExpenseForm
             initial={editing}
-            onSubmit={async (vals) => {
+            accounts={(accountsQ.data || []) as Array<{ Id: number; name?: string; currency?: string }>}
+            onSubmit={async (vals, accountId) => {
               if (editing) await updateMut.mutateAsync({ id: editing.Id, patch: vals });
-              else await createMut.mutateAsync(vals);
+              else await createMut.mutateAsync({ expense: vals, account_id: accountId });
               setOpen(false); setEditing(null);
             }}
             submitting={createMut.isPending || updateMut.isPending}
@@ -150,9 +157,10 @@ function ExpensesPage() {
   );
 }
 
-function ExpenseForm({ initial, onSubmit, submitting }: {
+function ExpenseForm({ initial, onSubmit, submitting, accounts }: {
   initial: Expense | null;
-  onSubmit: (vals: Omit<Expense, "Id">) => void | Promise<void>;
+  accounts: Array<{ Id: number; name?: string; currency?: string }>;
+  onSubmit: (vals: Omit<Expense, "Id">, accountId: number | null) => void | Promise<void>;
   submitting: boolean;
 }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -167,6 +175,7 @@ function ExpenseForm({ initial, onSubmit, submitting }: {
     receipt_no: initial?.receipt_no || "",
     notes: initial?.notes || "",
   });
+  const [accountId, setAccountId] = useState<number | null>(null);
   function set<K extends keyof typeof vals>(k: K, v: (typeof vals)[K]) {
     setVals((p) => ({ ...p, [k]: v }));
   }
@@ -230,9 +239,25 @@ function ExpenseForm({ initial, onSubmit, submitting }: {
           <Label>Notlar</Label>
           <Textarea rows={2} value={vals.notes || ""} onChange={(e) => set("notes", e.target.value)} />
         </div>
+        {!initial && (
+          <div className="grid gap-1.5 rounded-md border border-border bg-muted/30 p-3">
+            <Label className="text-xs">Kasadan düş (opsiyonel)</Label>
+            <select
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={accountId ?? ""}
+              onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">— Kasaya işlenmesin —</option>
+              {accounts.map((a) => (
+                <option key={a.Id} value={a.Id}>{a.name} ({a.currency})</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-muted-foreground">Seçilirse otomatik kasa çıkış hareketi oluşturulur.</p>
+          </div>
+        )}
       </div>
       <DialogFooter>
-        <Button onClick={() => onSubmit(vals)} disabled={submitting}>
+        <Button onClick={() => onSubmit(vals, accountId)} disabled={submitting}>
           {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor…</> : "Kaydet"}
         </Button>
       </DialogFooter>

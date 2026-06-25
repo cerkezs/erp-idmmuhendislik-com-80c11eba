@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck } from "lucide-react";
+import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck, Bell } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 import { getRates } from "@/lib/rates.functions";
 import { me, logout } from "@/lib/auth.functions";
+import { unreadCount } from "@/lib/nocodb.functions";
 
 const PUBLIC_PATHS = new Set<string>(["/auth", "/setup"]);
 
@@ -142,6 +143,12 @@ function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; em
     staleTime: 1000 * 60 * 30,
     refetchInterval: 1000 * 60 * 60,
   });
+  const unreadQ = useQuery({
+    queryKey: ["notif-unread"],
+    queryFn: () => unreadCount(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
 
   const fmt = (n?: number) => (n && n > 0 ? n.toFixed(4) : "—");
   const usd = fmt(data?.usd);
@@ -211,6 +218,19 @@ function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; em
       )}
 
       <div className="flex items-center gap-2">
+        <Link
+          to="/notifications"
+          className="relative rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+          title="Bildirimler"
+          aria-label="Bildirimler"
+        >
+          <Bell className="h-4 w-4" />
+          {unreadQ.data && unreadQ.data.count > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+              {unreadQ.data.count > 99 ? "99+" : unreadQ.data.count}
+            </span>
+          )}
+        </Link>
         <div className="hidden flex-col items-end leading-tight sm:flex">
           <span className="text-xs font-medium">{user.name || user.email}</span>
           <span className="text-[10px] uppercase text-muted-foreground">{user.role}</span>

@@ -14,9 +14,9 @@ import {
 import {
   listProductions, createProduction, updateProduction, deleteProduction,
   listStages, createStage, updateStage, deleteStage,
-  listCompanies, listProducts,
+  listCompanies, listProducts, completeProduction,
 } from "@/lib/nocodb.functions";
-import { Factory, Plus, Pencil, Trash2, Loader2, AlertCircle, ChevronDown, ChevronRight, Search, X, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Factory, Plus, Pencil, Trash2, Loader2, AlertCircle, ChevronDown, ChevronRight, Search, X, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/productions")({
   head: () => ({ meta: [{ title: "Üretim — IDM ERP" }] }),
@@ -120,6 +120,16 @@ function ProductionsPage() {
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["productions"] }),
   });
+  const completeFn = useServerFn(completeProduction);
+  const completeMut = useMutation({
+    mutationFn: (id: number) => completeFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productions"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
+    onError: (e) => alert("Hata: " + (e as Error).message),
+  });
 
   const [editing, setEditing] = useState<Production | null>(null);
   const [open, setOpen] = useState(false);
@@ -164,7 +174,16 @@ function ProductionsPage() {
             <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${style.badge}`}>{p.status || "—"}</span>
           </td>
           <td className="px-3 py-2 text-right tabular-nums">{(p.total_cost ?? 0).toLocaleString("tr-TR")} ₺</td>
-          <td className="px-3 py-2 text-right">
+          <td className="px-3 py-2 text-right whitespace-nowrap">
+            {p.status !== "Tamamlandı" && p.status !== "İptal" && (
+              <Button variant="ghost" size="sm" title="Tamamla (stoğa ekle)"
+                disabled={completeMut.isPending}
+                onClick={() => {
+                  if (confirm(`"${p.number || p.Id}" tamamlandı olarak işaretlensin ve ${p.qty || 0} adet ürün stoğa eklensin mi?`)) completeMut.mutate(p.Id);
+                }}>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+              </Button>
+            )}
             <Button variant="ghost" size="sm" onClick={() => { setEditing(p); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
             <Button variant="ghost" size="sm" onClick={() => { if (confirm("Emir silinsin mi?")) deleteMut.mutate(p.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
           </td>
