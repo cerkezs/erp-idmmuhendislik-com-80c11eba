@@ -283,12 +283,48 @@ async function listTables(baseId: string) {
   );
 }
 
+async function listTableColumns(tableId: string): Promise<Array<{ title: string; column_name?: string }>> {
+  try {
+    const res = await nc<{ columns?: Array<{ title: string; column_name?: string }> }>(
+      `/api/v2/meta/tables/${tableId}`,
+    );
+    return res.columns || [];
+  } catch {
+    return [];
+  }
+}
+
+async function addMissingColumns(tableId: string, columns: ColDef[]): Promise<string[]> {
+  const existing = await listTableColumns(tableId);
+  const have = new Set(existing.map((c) => c.title));
+  const added: string[] = [];
+  for (const col of columns) {
+    if (have.has(col.title)) continue;
+    try {
+      await nc(`/api/v2/meta/tables/${tableId}/columns`, {
+        method: "POST",
+        body: JSON.stringify(col),
+      });
+      added.push(col.title);
+    } catch {
+      // ignore — column may exist with different casing
+    }
+  }
+  return added;
+}
+
 async function ensureTable(baseId: string, name: string, columns: ColDef[]) {
   const existing = await listTables(baseId);
   const found = existing.list?.find(
     (t) => t.title === name || t.table_name === name,
   );
-  if (found) return { id: found.id, status: "exists" as const };
+  if (found) {
+    const added = await addMissingColumns(found.id, columns);
+    return {
+      id: found.id,
+      status: (added.length > 0 ? `+${added.length} kolon` : "exists") as string,
+    };
+  }
 
   const created = await nc<{ id: string }>(
     `/api/v2/meta/bases/${baseId}/tables`,
