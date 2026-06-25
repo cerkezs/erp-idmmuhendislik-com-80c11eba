@@ -1296,30 +1296,119 @@ export const upsertNotifPref = createServerFn({ method: "POST" })
   });
 
 // ---------- Kullanıcılar ----------
-const USER_MAP = { name: "ad", email: "eposta", role: "rol", active: "aktif", notes: "notlar" } as const;
+const USER_MAP = {
+  name: "ad",
+  email: "eposta",
+  role: "rol",
+  active: "aktif",
+  notes: "notlar",
+  totp_enabled: "totp_aktif",
+  last_login: "son_giris",
+  must_change_password: "sifre_degistir",
+} as const;
 const UserInput = z.object({
   name: z.string().min(1),
   email: z.string().optional().default(""),
-  role: z.enum(["admin", "operator", "viewer"]).default("operator"),
+  role: z.enum(["admin", "muhasebe", "uretim", "operator", "viewer"]).default("operator"),
   active: z.boolean().optional().default(true),
   notes: z.string().optional().default(""),
 });
+function stripUserSecrets(rec: Record<string, unknown>): Record<string, unknown> {
+  const c = { ...rec };
+  delete c.parola_hash;
+  delete c.totp_secret;
+  return c;
+}
 export const listUsers = createServerFn({ method: "GET" }).handler(async () =>
-  (await listRecords("kullanicilar", 200)).map((r) => fromTr(r, USER_MAP)),
+  (await listRecords("kullanicilar", 200)).map((r) => stripUserSecrets(fromTr(r, USER_MAP) as Record<string, unknown>)),
 );
 export const createUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UserInput.parse(d))
   .handler(async ({ data }) =>
-    fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP),
+    stripUserSecrets(fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP) as Record<string, unknown>),
   );
 export const updateUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number(), patch: UserInput.partial() }).parse(d))
   .handler(async ({ data }) =>
-    fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP),
+    stripUserSecrets(fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP) as Record<string, unknown>),
   );
 export const deleteUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("kullanicilar", data.id));
+
+// ---------- Internal helpers (used by auth.functions) ----------
+export async function _internalFindUserByEmail(email: string): Promise<Record<string, unknown> | null> {
+  const tableId = await getTableId("kullanicilar");
+  const where = encodeURIComponent(`(eposta,eq,${email})`);
+  const res = await nc<{ list: Record<string, unknown>[] }>(
+    `/api/v2/tables/${tableId}/records?where=${where}&limit=1`,
+  );
+  return res.list?.[0] ?? null;
+}
+export async function _internalGetUser(id: number): Promise<Record<string, unknown> | null> {
+  const tableId = await getTableId("kullanicilar");
+  try {
+    return await nc<Record<string, unknown>>(`/api/v2/tables/${tableId}/records/${id}`);
+  } catch {
+    return null;
+  }
+}
+export async function _internalUpdateUserRaw(id: number, patch: Record<string, unknown>): Promise<void> {
+  const tableId = await getTableId("kullanicilar");
+  await nc(`/api/v2/tables/${tableId}/records`, {
+    method: "PATCH",
+    body: JSON.stringify({ Id: id, ...patch }),
+  });
+}
+export async function _internalCreateUserRaw(data: Record<string, unknown>): Promise<{ Id: number }> {
+  const tableId = await getTableId("kullanicilar");
+  return nc<{ Id: number }>(`/api/v2/tables/${tableId}/records`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export async function _internalLogLogin(data: Record<string, unknown>): Promise<void> {
+  try {
+    const tableId = await getTableId("oturum_loglari");
+    await nc(`/api/v2/tables/${tableId}/records`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  } catch { /* log table missing — ignore */ }
+}
+export async function _internalCountUsers(): Promise<number> {
+  const rows = await listRecords("kullanicilar", 200);
+  return rows.length;
+}
+export async function _internalListNotificationsRaw(): Promise<Record_[]> {
+  return listRecords("bildirimler", 500);
+}
+export async function _internalCreateNotificationRaw(data: Record<string, JsonValue>): Promise<void> {
+  await createRecord("bildirimler", data);
+}
+export async function _internalMarkAllReadRaw(): Promise<void> {
+  const tableId = await getTableId("bildirimler");
+  const rows = await listRecords("bildirimler", 500);
+  for (const r of rows) {
+    if (r.okundu) continue;
+    await nc(`/api/v2/tables/${tableId}/records`, {
+      method: "PATCH",
+      body: JSON.stringify({ Id: r.Id, okundu: true }),
+    });
+  }
+}
+// Re-exported nocodb http for files upload
+export async function _internalNcFetch(path: string, init?: RequestInit & { rawBody?: BodyInit; rawHeaders?: Record<string, string> }): Promise<unknown> {
+  const { url, token } = env();
+  const res = await fetch(`${url}${path}`, {
+    method: init?.method || "GET",
+    headers: { "xc-token": token, ...(init?.rawHeaders || {}) },
+    body: init?.rawBody,
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`NocoDB ${res.status} ${path}: ${text.slice(0, 400)}`);
+  return text ? JSON.parse(text) : {};
+}
 
 // ---------- Mail Hesapları (gönderici profilleri) ----------
 const MH_MAP = {
