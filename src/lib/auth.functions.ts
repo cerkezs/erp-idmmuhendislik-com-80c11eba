@@ -11,6 +11,7 @@ import {
   _internalCreateUserRaw,
   _internalLogLogin,
   _internalCountUsers,
+  _internalEnsureAuthSchema,
 } from "./nocodb.functions";
 
 export type SessionUser = {
