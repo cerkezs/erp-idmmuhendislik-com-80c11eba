@@ -132,6 +132,8 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "kur", uidt: "Decimal" },
     { title: "aciklama", uidt: "LongText" },
     { title: "referans", uidt: "SingleLineText" },
+    { title: "kaynak_tip", uidt: "SingleLineText" },
+    { title: "kaynak_id", uidt: "Number" },
   ],
   bildirimler: [
     { title: "tarih", uidt: "DateTime" },
@@ -141,6 +143,9 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "link", uidt: "SingleLineText" },
     { title: "okundu", uidt: "Checkbox" },
     { title: "kullanici", uidt: "SingleLineText" },
+    { title: "kaynak_tip", uidt: "SingleLineText" },
+    { title: "kaynak_id", uidt: "Number" },
+    { title: "dedup", uidt: "SingleLineText" },
   ],
   uretim_emirleri: [
     { title: "numara", uidt: "SingleLineText" },
@@ -166,6 +171,8 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "bitis", uidt: "Date" },
     { title: "durum", uidt: "SingleLineText" },
     { title: "notlar", uidt: "LongText" },
+    { title: "sarf_urun_id", uidt: "Number" },
+    { title: "sarf_miktar", uidt: "Decimal" },
   ],
   gorevler: [
     { title: "tarih", uidt: "DateTime" },
@@ -189,6 +196,7 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "boyut", uidt: "SingleLineText" },
     { title: "tur", uidt: "SingleLineText" },
     { title: "notlar", uidt: "LongText" },
+    { title: "attachment", uidt: "Attachment" },
   ],
   mail_log: [
     { title: "tarih", uidt: "DateTime" },
@@ -226,6 +234,19 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "rol", uidt: "SingleLineText" },
     { title: "aktif", uidt: "Checkbox" },
     { title: "notlar", uidt: "LongText" },
+    { title: "parola_hash", uidt: "LongText" },
+    { title: "totp_secret", uidt: "LongText" },
+    { title: "totp_aktif", uidt: "Checkbox" },
+    { title: "son_giris", uidt: "DateTime" },
+    { title: "sifre_degistir", uidt: "Checkbox" },
+  ],
+  oturum_loglari: [
+    { title: "tarih", uidt: "DateTime" },
+    { title: "kullanici_id", uidt: "Number" },
+    { title: "eposta", uidt: "SingleLineText" },
+    { title: "ip", uidt: "SingleLineText" },
+    { title: "basarili", uidt: "Checkbox" },
+    { title: "notlar", uidt: "LongText" },
   ],
   mail_hesaplari: [
     { title: "isim", uidt: "SingleLineText" },
@@ -239,7 +260,6 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "varsayilan", uidt: "Checkbox" },
     { title: "aktif", uidt: "Checkbox" },
   ],
-
 };
 
 
@@ -263,12 +283,48 @@ async function listTables(baseId: string) {
   );
 }
 
+async function listTableColumns(tableId: string): Promise<Array<{ title: string; column_name?: string }>> {
+  try {
+    const res = await nc<{ columns?: Array<{ title: string; column_name?: string }> }>(
+      `/api/v2/meta/tables/${tableId}`,
+    );
+    return res.columns || [];
+  } catch {
+    return [];
+  }
+}
+
+async function addMissingColumns(tableId: string, columns: ColDef[]): Promise<string[]> {
+  const existing = await listTableColumns(tableId);
+  const have = new Set(existing.map((c) => c.title));
+  const added: string[] = [];
+  for (const col of columns) {
+    if (have.has(col.title)) continue;
+    try {
+      await nc(`/api/v2/meta/tables/${tableId}/columns`, {
+        method: "POST",
+        body: JSON.stringify(col),
+      });
+      added.push(col.title);
+    } catch {
+      // ignore — column may exist with different casing
+    }
+  }
+  return added;
+}
+
 async function ensureTable(baseId: string, name: string, columns: ColDef[]) {
   const existing = await listTables(baseId);
   const found = existing.list?.find(
     (t) => t.title === name || t.table_name === name,
   );
-  if (found) return { id: found.id, status: "exists" as const };
+  if (found) {
+    const added = await addMissingColumns(found.id, columns);
+    return {
+      id: found.id,
+      status: (added.length > 0 ? `+${added.length} kolon` : "exists") as string,
+    };
+  }
 
   const created = await nc<{ id: string }>(
     `/api/v2/meta/bases/${baseId}/tables`,
@@ -1240,30 +1296,119 @@ export const upsertNotifPref = createServerFn({ method: "POST" })
   });
 
 // ---------- Kullanıcılar ----------
-const USER_MAP = { name: "ad", email: "eposta", role: "rol", active: "aktif", notes: "notlar" } as const;
+const USER_MAP = {
+  name: "ad",
+  email: "eposta",
+  role: "rol",
+  active: "aktif",
+  notes: "notlar",
+  totp_enabled: "totp_aktif",
+  last_login: "son_giris",
+  must_change_password: "sifre_degistir",
+} as const;
 const UserInput = z.object({
   name: z.string().min(1),
   email: z.string().optional().default(""),
-  role: z.enum(["admin", "operator", "viewer"]).default("operator"),
+  role: z.enum(["admin", "muhasebe", "uretim", "operator", "viewer"]).default("operator"),
   active: z.boolean().optional().default(true),
   notes: z.string().optional().default(""),
 });
-export const listUsers = createServerFn({ method: "GET" }).handler(async () =>
-  (await listRecords("kullanicilar", 200)).map((r) => fromTr(r, USER_MAP)),
+function stripUserSecrets(rec: Record_): Record_ {
+  const c: Record_ = { ...rec };
+  delete (c as Record<string, unknown>).parola_hash;
+  delete (c as Record<string, unknown>).totp_secret;
+  return c;
+}
+export const listUsers = createServerFn({ method: "GET" }).handler(async (): Promise<Record_[]> =>
+  (await listRecords("kullanicilar", 200)).map((r) => stripUserSecrets(fromTr(r, USER_MAP))),
 );
 export const createUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UserInput.parse(d))
-  .handler(async ({ data }) =>
-    fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP),
+  .handler(async ({ data }): Promise<Record_> =>
+    stripUserSecrets(fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP)),
   );
 export const updateUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number(), patch: UserInput.partial() }).parse(d))
-  .handler(async ({ data }) =>
-    fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP),
+  .handler(async ({ data }): Promise<Record_> =>
+    stripUserSecrets(fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP)),
   );
 export const deleteUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("kullanicilar", data.id));
+
+// ---------- Internal helpers (used by auth.functions) ----------
+export async function _internalFindUserByEmail(email: string): Promise<Record<string, unknown> | null> {
+  const tableId = await getTableId("kullanicilar");
+  const where = encodeURIComponent(`(eposta,eq,${email})`);
+  const res = await nc<{ list: Record<string, unknown>[] }>(
+    `/api/v2/tables/${tableId}/records?where=${where}&limit=1`,
+  );
+  return res.list?.[0] ?? null;
+}
+export async function _internalGetUser(id: number): Promise<Record<string, unknown> | null> {
+  const tableId = await getTableId("kullanicilar");
+  try {
+    return await nc<Record<string, unknown>>(`/api/v2/tables/${tableId}/records/${id}`);
+  } catch {
+    return null;
+  }
+}
+export async function _internalUpdateUserRaw(id: number, patch: Record<string, unknown>): Promise<void> {
+  const tableId = await getTableId("kullanicilar");
+  await nc(`/api/v2/tables/${tableId}/records`, {
+    method: "PATCH",
+    body: JSON.stringify({ Id: id, ...patch }),
+  });
+}
+export async function _internalCreateUserRaw(data: Record<string, unknown>): Promise<{ Id: number }> {
+  const tableId = await getTableId("kullanicilar");
+  return nc<{ Id: number }>(`/api/v2/tables/${tableId}/records`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+export async function _internalLogLogin(data: Record<string, unknown>): Promise<void> {
+  try {
+    const tableId = await getTableId("oturum_loglari");
+    await nc(`/api/v2/tables/${tableId}/records`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  } catch { /* log table missing — ignore */ }
+}
+export async function _internalCountUsers(): Promise<number> {
+  const rows = await listRecords("kullanicilar", 200);
+  return rows.length;
+}
+export async function _internalListNotificationsRaw(): Promise<Record_[]> {
+  return listRecords("bildirimler", 500);
+}
+export async function _internalCreateNotificationRaw(data: Record<string, JsonValue>): Promise<void> {
+  await createRecord("bildirimler", data);
+}
+export async function _internalMarkAllReadRaw(): Promise<void> {
+  const tableId = await getTableId("bildirimler");
+  const rows = await listRecords("bildirimler", 500);
+  for (const r of rows) {
+    if (r.okundu) continue;
+    await nc(`/api/v2/tables/${tableId}/records`, {
+      method: "PATCH",
+      body: JSON.stringify({ Id: r.Id, okundu: true }),
+    });
+  }
+}
+// Re-exported nocodb http for files upload
+export async function _internalNcFetch(path: string, init?: RequestInit & { rawBody?: BodyInit; rawHeaders?: Record<string, string> }): Promise<unknown> {
+  const { url, token } = env();
+  const res = await fetch(`${url}${path}`, {
+    method: init?.method || "GET",
+    headers: { "xc-token": token, ...(init?.rawHeaders || {}) },
+    body: init?.rawBody,
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`NocoDB ${res.status} ${path}: ${text.slice(0, 400)}`);
+  return text ? JSON.parse(text) : {};
+}
 
 // ---------- Mail Hesapları (gönderici profilleri) ----------
 const MH_MAP = {

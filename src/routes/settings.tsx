@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
-import { Settings, Users, Mail, RefreshCw, Bell, Server, Tags, Wallet, Archive } from "lucide-react";
+import { Settings, Users, Mail, RefreshCw, Bell, Server, Tags, Wallet, Archive, ShieldCheck } from "lucide-react";
 
 const SECTIONS = [
-  { to: "/settings/kullanicilar", label: "Kullanıcılar & Roller", icon: Users, desc: "Kullanıcı ekle, rol ata (admin / operator / viewer)" },
+  { to: "/auth/sifre", label: "Hesabım & Güvenlik", icon: ShieldCheck, desc: "Parola değiştir · iki adımlı doğrulama (Google Authenticator)" },
+  { to: "/settings/kullanicilar", label: "Kullanıcılar & Roller", icon: Users, desc: "Kullanıcı ekle, rol ata · parola/TOTP sıfırla" },
   { to: "/settings/mail", label: "Mail & SMTP", icon: Mail, desc: "SMTP durumu, test maili, ortak gönderici hesaplar" },
   { to: "/settings/kur", label: "Döviz Kurları", icon: RefreshCw, desc: "TCMB otomatik · manuel override · geçmiş kurlar" },
   { to: "/settings/bildirimler", label: "Bildirim Türleri", icon: Bell, desc: "Vade, stok, üretim, kasa — kanal başına aç/kapa" },

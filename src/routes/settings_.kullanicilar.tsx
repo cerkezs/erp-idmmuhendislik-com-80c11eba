@@ -10,15 +10,16 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { listUsers, createUser, updateUser, deleteUser } from "@/lib/nocodb.functions";
-import { Users, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { adminResetPassword, adminResetTotp } from "@/lib/auth.functions";
+import { Users, Plus, Pencil, Trash2, Loader2, KeyRound, ShieldOff } from "lucide-react";
 
 export const Route = createFileRoute("/settings_/kullanicilar")({
   head: () => ({ meta: [{ title: "Kullanıcılar — Ayarlar" }] }),
   component: KullanicilarPage,
 });
 
-type U = { Id: number; name?: string; email?: string; role?: string; active?: boolean; notes?: string };
-type Role = "admin" | "operator" | "viewer";
+type U = { Id: number; name?: string; email?: string; role?: string; active?: boolean; notes?: string; totp_enabled?: boolean; last_login?: string };
+type Role = "admin" | "muhasebe" | "uretim" | "operator" | "viewer";
 
 function KullanicilarPage() {
   const qc = useQueryClient();
@@ -42,9 +43,24 @@ function KullanicilarPage() {
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
+  const resetPwd = useServerFn(adminResetPassword);
+  const resetTotp = useServerFn(adminResetTotp);
 
   const [editing, setEditing] = useState<U | null>(null);
   const [open, setOpen] = useState(false);
+
+  async function handleResetPwd(u: U) {
+    const np = prompt(`"${u.name}" için yeni parola (en az 6 karakter):`);
+    if (!np || np.length < 6) return;
+    const res = await resetPwd({ data: { id: u.Id, password: np } });
+    alert(res.ok ? `Parola güncellendi. Kullanıcı bir sonraki girişte değiştirmek zorunda kalacak.` : `Hata: ${res.error}`);
+  }
+  async function handleResetTotp(u: U) {
+    if (!confirm(`"${u.name}" için 2FA sıfırlansın mı?`)) return;
+    const res = await resetTotp({ data: { id: u.Id } });
+    alert(res.ok ? "2FA sıfırlandı." : `Hata: ${res.error}`);
+    qc.invalidateQueries({ queryKey: ["users"] });
+  }
 
   return (
     <AppShell>
@@ -76,11 +92,11 @@ function KullanicilarPage() {
         <div className="overflow-hidden rounded-lg border border-border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-              <tr><th className="px-3 py-2 text-left">Ad</th><th className="px-3 py-2 text-left">E-posta</th><th className="px-3 py-2">Rol</th><th className="px-3 py-2">Aktif</th><th className="px-3 py-2 text-right">İşlem</th></tr>
+              <tr><th className="px-3 py-2 text-left">Ad</th><th className="px-3 py-2 text-left">E-posta</th><th className="px-3 py-2">Rol</th><th className="px-3 py-2">2FA</th><th className="px-3 py-2">Aktif</th><th className="px-3 py-2 text-right">İşlem</th></tr>
             </thead>
             <tbody>
-              {q.isLoading && <tr><td colSpan={5} className="px-3 py-8 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></td></tr>}
-              {!q.isLoading && items.length === 0 && <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">Henüz kayıt yok.</td></tr>}
+              {q.isLoading && <tr><td colSpan={6} className="px-3 py-8 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></td></tr>}
+              {!q.isLoading && items.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">Henüz kayıt yok.</td></tr>}
               {items.map((u) => (
                 <tr key={u.Id} className="border-t border-border">
                   <td className="px-3 py-2 font-medium">{u.name}</td>
@@ -88,17 +104,22 @@ function KullanicilarPage() {
                   <td className="px-3 py-2 text-center">
                     <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">{u.role || "operator"}</span>
                   </td>
+                  <td className="px-3 py-2 text-center text-xs">
+                    {u.totp_enabled ? <span className="text-emerald-600">Aktif</span> : <span className="text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-3 py-2 text-center">{u.active === false ? "—" : "✓"}</td>
                   <td className="px-3 py-2 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditing(u); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm(`"${u.name}" silinsin mi?`)) deleteMut.mutate(u.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(u); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" title="Parola sıfırla" onClick={() => handleResetPwd(u)}><KeyRound className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" title="2FA sıfırla" onClick={() => handleResetTotp(u)}><ShieldOff className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm(`"${u.name}" silinsin mi?`)) deleteMut.mutate(u.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">Not: Şu an şifre / oturum açma yok — yalnızca kayıt amaçlıdır. İleride Lovable Cloud ile gerçek kimlik doğrulama eklenebilir.</p>
+        <p className="mt-3 text-xs text-muted-foreground">İpucu: Yeni eklenen kullanıcının giriş yapabilmesi için <strong>Parola sıfırla</strong> ile bir geçici parola ayarlayın. Kullanıcı ilk girişten sonra parolayı değiştirmeye yönlendirilir. İki adımlı doğrulamayı kullanıcının kendisi <em>Ayarlar → Hesabım & Güvenlik</em> üzerinden etkinleştirir.</p>
       </div>
     </AppShell>
   );
@@ -127,6 +148,8 @@ function UserForm({ initial, onSubmit, submitting }: {
             <Label>Rol</Label>
             <select className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={vals.role} onChange={(e) => setVals({ ...vals, role: e.target.value as Role })}>
               <option value="admin">admin</option>
+              <option value="muhasebe">muhasebe</option>
+              <option value="uretim">uretim</option>
               <option value="operator">operator</option>
               <option value="viewer">viewer</option>
             </select>
