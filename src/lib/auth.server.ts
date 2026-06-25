@@ -19,6 +19,7 @@ function sessionConfig() {
   return {
     password,
     name: "idm-erp-session",
+    sessionHeader: "x-idm-erp-session",
     maxAge: 60 * 60 * 24 * 14,
     cookie: {
       httpOnly: true,
