@@ -24,6 +24,7 @@ function sessionConfig() {
       httpOnly: true,
       secure: isSecure,
       sameSite: isSecure ? ("none" as const) : ("lax" as const),
+      partitioned: isSecure,
       path: "/",
     },
   };
