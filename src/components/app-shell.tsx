@@ -19,6 +19,35 @@ const GROUP_LABEL: Record<string, string> = {
 export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const router = useRouter();
+  const isPublic = PUBLIC_PATHS.has(path);
+
+  const userQ = useQuery({
+    queryKey: ["auth-me"],
+    queryFn: () => me(),
+    staleTime: 1000 * 60,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (isPublic) return;
+    if (userQ.isLoading) return;
+    if (!userQ.data) {
+      const next = encodeURIComponent(path);
+      router.navigate({ to: `/auth?next=${next}` as never });
+    }
+  }, [isPublic, userQ.data, userQ.isLoading, path, router]);
+
+  if (isPublic) {
+    return <div className="min-h-screen w-full bg-background text-foreground">{children}</div>;
+  }
+  if (userQ.isLoading || !userQ.data) {
+    return (
+      <div className="grid min-h-screen w-full place-items-center bg-background text-muted-foreground">
+        <div className="text-sm">Yükleniyor…</div>
+      </div>
+    );
+  }
 
   const groups = ["main", "ops", "fin", "system"] as const;
 
