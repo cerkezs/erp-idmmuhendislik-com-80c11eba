@@ -42,7 +42,6 @@ function AuthPage() {
       const res = await login({ data: { email, password, totp } });
       if (res.ok) {
         queryClient.setQueryData(["auth-me"], res.user);
-        await queryClient.invalidateQueries({ queryKey: ["auth-me"] });
         await router.navigate({ to: (next || "/") as never });
         return;
       }
