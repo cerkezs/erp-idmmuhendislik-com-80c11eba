@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login, bootstrapAuth } from "@/lib/auth.functions";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const searchSchema = z.object({ next: z.string().optional() });
 
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { next } = useSearch({ from: "/auth" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +41,8 @@ function AuthPage() {
     try {
       const res = await login({ data: { email, password, totp } });
       if (res.ok) {
-        router.navigate({ to: (next || "/") as never });
+        queryClient.setQueryData(["auth-me"], res.user);
+        await router.navigate({ to: (next || "/") as never });
         return;
       }
       if ("needsTotp" in res && res.needsTotp) setNeedsTotp(true);

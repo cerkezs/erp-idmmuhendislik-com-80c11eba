@@ -26,6 +26,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const userQ = useQuery({
     queryKey: ["auth-me"],
     queryFn: () => me(),
+    enabled: !isPublic,
     staleTime: 1000 * 60,
     refetchOnWindowFocus: false,
   });
