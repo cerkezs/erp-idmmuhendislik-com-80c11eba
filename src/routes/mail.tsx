@@ -10,13 +10,16 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   listMails, createMail, updateMail, deleteMail,
 } from "@/lib/nocodb.functions";
-import { Mail as MailIcon, Plus, Trash2, Loader2, AlertCircle, Send, Info } from "lucide-react";
+import { Mail as MailIcon, Plus, Trash2, Loader2, AlertCircle, Send, ExternalLink, RefreshCw } from "lucide-react";
+
+const WEBMAIL_URL = "https://webmail.idmmuhendislik.com";
 
 export const Route = createFileRoute("/mail")({
-  head: () => ({ meta: [{ title: "Mail — IDM ERP" }] }),
+  head: () => ({ meta: [{ title: "Webmail — IDM ERP" }] }),
   component: MailPage,
 });
 
@@ -26,6 +29,68 @@ type Mail = {
 };
 
 function MailPage() {
+  const [iframeKey, setIframeKey] = useState(0);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+
+  return (
+    <AppShell>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary"><MailIcon className="h-5 w-5" /></div>
+          <div>
+            <h1 className="text-xl font-semibold">Mail</h1>
+            <p className="text-sm text-muted-foreground">Webmail paneli ve gönderim logları</p>
+          </div>
+        </div>
+      </div>
+
+      <Tabs defaultValue="webmail" className="w-full">
+        <TabsList>
+          <TabsTrigger value="webmail">Webmail</TabsTrigger>
+          <TabsTrigger value="log">Log & Hızlı Gönder</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="webmail" className="mt-3">
+          <div className="mb-2 flex items-center justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setIframeLoaded(false); setIframeKey((k) => k + 1); }}>
+              <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Yenile
+            </Button>
+            <a href={WEBMAIL_URL} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm"><ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Yeni sekmede aç</Button>
+            </a>
+          </div>
+          <div className="relative overflow-hidden rounded-lg border border-border bg-card" style={{ height: "calc(100vh - 220px)", minHeight: 520 }}>
+            {!iframeLoaded && (
+              <div className="absolute inset-0 grid place-items-center bg-background/60 backdrop-blur-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Webmail yükleniyor…
+                </div>
+              </div>
+            )}
+            <iframe
+              key={iframeKey}
+              src={WEBMAIL_URL}
+              title="Webmail"
+              className="h-full w-full"
+              referrerPolicy="no-referrer"
+              allow="clipboard-read; clipboard-write; fullscreen"
+              onLoad={() => setIframeLoaded(true)}
+            />
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Not: Tarayıcı güvenliği nedeniyle bazı durumlarda webmail iframe içinde açılmayabilir. O zaman "Yeni sekmede aç" düğmesini kullanın.
+          </p>
+        </TabsContent>
+
+        <TabsContent value="log" className="mt-3">
+          <MailLogPanel />
+        </TabsContent>
+      </Tabs>
+    </AppShell>
+  );
+}
+
+function MailLogPanel() {
   const qc = useQueryClient();
   const list = useServerFn(listMails);
   const create = useServerFn(createMail);
@@ -51,26 +116,19 @@ function MailPage() {
   const rows = ((data || []) as Mail[]).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
   return (
-    <AppShell>
-      <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 place-items-center rounded-md bg-primary/10 text-primary"><MailIcon className="h-5 w-5" /></div>
-          <div>
-            <h1 className="text-xl font-semibold">Mail Gönderim & Log</h1>
-            <p className="text-sm text-muted-foreground">{rows.length} kayıt</p>
-          </div>
-        </div>
+    <>
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{rows.length} kayıt</p>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Yeni Mail</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" /> Yeni Mail</Button></DialogTrigger>
           <MailForm
             onSend={async (vals) => {
-              const created = await createMut.mutateAsync({ ...vals, status: "Gönderildi" });
+              await createMut.mutateAsync({ ...vals, status: "Gönderildi" });
               const to = encodeURIComponent(vals.to || "");
               const subj = encodeURIComponent(vals.subject || "");
               const body = encodeURIComponent(vals.body || "");
               window.location.href = `mailto:${to}?subject=${subj}&body=${body}`;
               setOpen(false);
-              return created;
             }}
             onSaveDraft={async (vals) => {
               await createMut.mutateAsync({ ...vals, status: "Taslak" });
@@ -79,15 +137,6 @@ function MailPage() {
             submitting={createMut.isPending}
           />
         </Dialog>
-      </div>
-
-      <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3 text-xs">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        <div className="text-muted-foreground">
-          Mailler şu an cihazınızın varsayılan posta uygulaması üzerinden (<code>mailto:</code>) açılır ve her gönderim
-          burada loglanır. SMTP entegrasyonu için <Link to="/settings" className="underline">Ayarlar → SMTP</Link> sekmesinden
-          sunucu bilgilerini ekleyin (ileride doğrudan gönderim eklenecek).
-        </div>
       </div>
 
       {error && (
@@ -136,7 +185,7 @@ function MailPage() {
           </tbody>
         </table>
       </div>
-    </AppShell>
+    </>
   );
 }
 
