@@ -43,9 +43,24 @@ function KullanicilarPage() {
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
   });
+  const resetPwd = useServerFn(adminResetPassword);
+  const resetTotp = useServerFn(adminResetTotp);
 
   const [editing, setEditing] = useState<U | null>(null);
   const [open, setOpen] = useState(false);
+
+  async function handleResetPwd(u: U) {
+    const np = prompt(`"${u.name}" için yeni parola (en az 6 karakter):`);
+    if (!np || np.length < 6) return;
+    const res = await resetPwd({ data: { id: u.Id, password: np } });
+    alert(res.ok ? `Parola güncellendi. Kullanıcı bir sonraki girişte değiştirmek zorunda kalacak.` : `Hata: ${res.error}`);
+  }
+  async function handleResetTotp(u: U) {
+    if (!confirm(`"${u.name}" için 2FA sıfırlansın mı?`)) return;
+    const res = await resetTotp({ data: { id: u.Id } });
+    alert(res.ok ? "2FA sıfırlandı." : `Hata: ${res.error}`);
+    qc.invalidateQueries({ queryKey: ["users"] });
+  }
 
   return (
     <AppShell>
