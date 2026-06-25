@@ -1313,24 +1313,24 @@ const UserInput = z.object({
   active: z.boolean().optional().default(true),
   notes: z.string().optional().default(""),
 });
-function stripUserSecrets(rec: Record<string, unknown>): Record<string, unknown> {
-  const c = { ...rec };
-  delete c.parola_hash;
-  delete c.totp_secret;
+function stripUserSecrets(rec: Record_): Record_ {
+  const c: Record_ = { ...rec };
+  delete (c as Record<string, unknown>).parola_hash;
+  delete (c as Record<string, unknown>).totp_secret;
   return c;
 }
-export const listUsers = createServerFn({ method: "GET" }).handler(async () =>
-  (await listRecords("kullanicilar", 200)).map((r) => stripUserSecrets(fromTr(r, USER_MAP) as Record<string, unknown>)),
+export const listUsers = createServerFn({ method: "GET" }).handler(async (): Promise<Record_[]> =>
+  (await listRecords("kullanicilar", 200)).map((r) => stripUserSecrets(fromTr(r, USER_MAP))),
 );
 export const createUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UserInput.parse(d))
-  .handler(async ({ data }) =>
-    stripUserSecrets(fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP) as Record<string, unknown>),
+  .handler(async ({ data }): Promise<Record_> =>
+    stripUserSecrets(fromTr(await createRecord("kullanicilar", toTr(data, USER_MAP)), USER_MAP)),
   );
 export const updateUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number(), patch: UserInput.partial() }).parse(d))
-  .handler(async ({ data }) =>
-    stripUserSecrets(fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP) as Record<string, unknown>),
+  .handler(async ({ data }): Promise<Record_> =>
+    stripUserSecrets(fromTr(await updateRecord("kullanicilar", data.id, toTr(data.patch, USER_MAP)), USER_MAP)),
   );
 export const deleteUser = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
