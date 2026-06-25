@@ -171,6 +171,48 @@ function InvoicesPage() {
           setOpen(false); setEditing(null);
         }}
       />
+
+      {/* Tahsilat dialog */}
+      <Dialog open={!!paying} onOpenChange={(o) => { if (!o) setPaying(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tahsilat — {paying?.number || paying?.Id}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="rounded-md bg-muted/40 p-3 text-sm">
+              <div><span className="text-muted-foreground">Firma:</span> {paying?.company_name || "—"}</div>
+              <div><span className="text-muted-foreground">Tutar:</span> <span className="font-medium">{(paying?.total ?? 0).toLocaleString("tr-TR")} {paying?.currency || "TRY"}</span></div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tarih</Label>
+              <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Kasa / Banka</Label>
+              <select className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                value={payAccount ?? ""}
+                onChange={(e) => setPayAccount(Number(e.target.value) || null)}>
+                <option value="">Seçiniz…</option>
+                {(accountsQ.data || []).map((a) => {
+                  const x = a as { Id: number; name?: string; currency?: string };
+                  return <option key={x.Id} value={x.Id}>{x.name} ({x.currency})</option>;
+                })}
+              </select>
+              {(!accountsQ.data || accountsQ.data.length === 0) && (
+                <div className="text-[11px] text-amber-600">Önce <Link className="underline" to="/kasa">/kasa</Link> sayfasından bir kasa oluşturun.</div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPaying(null)}>Vazgeç</Button>
+            <Button
+              disabled={!payAccount || payMut.isPending}
+              onClick={() => paying && payAccount && payMut.mutate({ invoice_id: paying.Id, account_id: payAccount, date: payDate })}>
+              {payMut.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> İşleniyor…</> : "Tahsil Et"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
