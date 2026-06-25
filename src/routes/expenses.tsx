@@ -157,9 +157,10 @@ function ExpensesPage() {
   );
 }
 
-function ExpenseForm({ initial, onSubmit, submitting }: {
+function ExpenseForm({ initial, onSubmit, submitting, accounts }: {
   initial: Expense | null;
-  onSubmit: (vals: Omit<Expense, "Id">) => void | Promise<void>;
+  accounts: Array<{ Id: number; name?: string; currency?: string }>;
+  onSubmit: (vals: Omit<Expense, "Id">, accountId: number | null) => void | Promise<void>;
   submitting: boolean;
 }) {
   const today = new Date().toISOString().slice(0, 10);
@@ -174,6 +175,7 @@ function ExpenseForm({ initial, onSubmit, submitting }: {
     receipt_no: initial?.receipt_no || "",
     notes: initial?.notes || "",
   });
+  const [accountId, setAccountId] = useState<number | null>(null);
   function set<K extends keyof typeof vals>(k: K, v: (typeof vals)[K]) {
     setVals((p) => ({ ...p, [k]: v }));
   }
