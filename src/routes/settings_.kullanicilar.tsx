@@ -92,7 +92,7 @@ function KullanicilarPage() {
         <div className="overflow-hidden rounded-lg border border-border bg-card">
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-              <tr><th className="px-3 py-2 text-left">Ad</th><th className="px-3 py-2 text-left">E-posta</th><th className="px-3 py-2">Rol</th><th className="px-3 py-2">Aktif</th><th className="px-3 py-2 text-right">İşlem</th></tr>
+              <tr><th className="px-3 py-2 text-left">Ad</th><th className="px-3 py-2 text-left">E-posta</th><th className="px-3 py-2">Rol</th><th className="px-3 py-2">2FA</th><th className="px-3 py-2">Aktif</th><th className="px-3 py-2 text-right">İşlem</th></tr>
             </thead>
             <tbody>
               {q.isLoading && <tr><td colSpan={5} className="px-3 py-8 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></td></tr>}
