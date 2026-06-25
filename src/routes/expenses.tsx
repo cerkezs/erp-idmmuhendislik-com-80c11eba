@@ -239,9 +239,25 @@ function ExpenseForm({ initial, onSubmit, submitting, accounts }: {
           <Label>Notlar</Label>
           <Textarea rows={2} value={vals.notes || ""} onChange={(e) => set("notes", e.target.value)} />
         </div>
+        {!initial && (
+          <div className="grid gap-1.5 rounded-md border border-border bg-muted/30 p-3">
+            <Label className="text-xs">Kasadan düş (opsiyonel)</Label>
+            <select
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              value={accountId ?? ""}
+              onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : null)}
+            >
+              <option value="">— Kasaya işlenmesin —</option>
+              {accounts.map((a) => (
+                <option key={a.Id} value={a.Id}>{a.name} ({a.currency})</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-muted-foreground">Seçilirse otomatik kasa çıkış hareketi oluşturulur.</p>
+          </div>
+        )}
       </div>
       <DialogFooter>
-        <Button onClick={() => onSubmit(vals)} disabled={submitting}>
+        <Button onClick={() => onSubmit(vals, accountId)} disabled={submitting}>
           {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Kaydediliyor…</> : "Kaydet"}
         </Button>
       </DialogFooter>
