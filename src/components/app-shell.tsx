@@ -143,6 +143,12 @@ function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; em
     staleTime: 1000 * 60 * 30,
     refetchInterval: 1000 * 60 * 60,
   });
+  const unreadQ = useQuery({
+    queryKey: ["notif-unread"],
+    queryFn: () => unreadCount(),
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
 
   const fmt = (n?: number) => (n && n > 0 ? n.toFixed(4) : "—");
   const usd = fmt(data?.usd);
