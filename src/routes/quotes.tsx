@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -6,9 +6,9 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { DocumentForm, type DocData } from "@/components/document-form";
 import {
-  listQuotes, getQuote, saveQuote, deleteQuote,
+  listQuotes, getQuote, saveQuote, deleteQuote, convertQuoteToInvoice,
 } from "@/lib/nocodb.functions";
-import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowRightCircle } from "lucide-react";
 
 export const Route = createFileRoute("/quotes")({
   head: () => ({ meta: [{ title: "Teklifler — IDM ERP" }] }),
