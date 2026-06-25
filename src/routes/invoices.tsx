@@ -6,9 +6,14 @@ import { AppShell } from "@/components/app-shell";
 import { Button } from "@/components/ui/button";
 import { DocumentForm, type DocData } from "@/components/document-form";
 import {
-  listInvoices, getInvoice, saveInvoice, deleteInvoice,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  listInvoices, getInvoice, saveInvoice, deleteInvoice, payInvoice, listAccounts,
 } from "@/lib/nocodb.functions";
-import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle, BadgeDollarSign } from "lucide-react";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Faturalar — IDM ERP" }] }),
