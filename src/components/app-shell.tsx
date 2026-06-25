@@ -126,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main */}
       <div className="flex min-h-screen w-full flex-col md:pl-72">
-        <TopBar onMenu={() => setOpen(true)} />
+        <TopBar onMenu={() => setOpen(true)} user={userQ.data} />
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
