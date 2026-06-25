@@ -119,7 +119,16 @@ function QuotesPage() {
                 <td className="px-3 py-2 text-muted-foreground">{q.valid_until || "—"}</td>
                 <td className="px-3 py-2"><span className="rounded bg-muted px-2 py-0.5 text-xs">{q.status || "Taslak"}</span></td>
                 <td className="px-3 py-2 text-right tabular-nums">{(q.total ?? 0).toLocaleString("tr-TR")} {q.currency || "TRY"}</td>
-                <td className="px-3 py-2 text-right">
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  {q.status !== "Faturalandı" && (
+                    <Button variant="ghost" size="sm" title="Faturaya çevir"
+                      disabled={convertMut.isPending}
+                      onClick={() => {
+                        if (confirm(`"${q.number || q.Id}" teklifinden fatura oluşturulsun mu?`)) convertMut.mutate(q.Id);
+                      }}>
+                      <ArrowRightCircle className="h-3.5 w-3.5 text-emerald-600" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => openEdit(q.Id)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
