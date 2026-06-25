@@ -27,6 +27,11 @@ async function getSession() {
   return mod.getSession();
 }
 
+async function sealCurrentSession() {
+  const mod = await import("./auth.server");
+  return mod.sealCurrentSession();
+}
+
 
 function clientIp(req: Request | null): string {
   if (!req) return "";
@@ -142,6 +147,7 @@ export const login = createServerFn({ method: "POST" })
       mustChangePassword: row.sifre_degistir === true,
     };
     await session.update({ user });
+    const sessionToken = await sealCurrentSession();
     await _internalUpdateUserRaw(user.id, { son_giris: new Date().toISOString() });
     await _internalLogLogin({
       tarih: new Date().toISOString(),
@@ -149,7 +155,7 @@ export const login = createServerFn({ method: "POST" })
       eposta: user.email,
       basarili: true,
     });
-    return { ok: true as const, user };
+    return { ok: true as const, user, sessionToken };
   });
 
 export const logout = createServerFn({ method: "POST" }).handler(async () => {
@@ -183,7 +189,8 @@ export const changePassword = createServerFn({ method: "POST" })
     const hash = await bcrypt.hash(data.next, 10);
     await _internalUpdateUserRaw(u.id, { parola_hash: hash, sifre_degistir: false });
     await session.update({ user: { ...u, mustChangePassword: false } });
-    return { ok: true as const };
+    const sessionToken = await sealCurrentSession();
+    return { ok: true as const, sessionToken };
   });
 
 // ------------- admin: reset password for user -------------

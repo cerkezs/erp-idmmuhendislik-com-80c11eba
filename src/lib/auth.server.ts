@@ -1,4 +1,4 @@
-import { getRequestHeader, useSession } from "@tanstack/react-start/server";
+import { getRequestHeader, sealSession, useSession } from "@tanstack/react-start/server";
 
 export type SessionUser = {
   id: number;
@@ -19,6 +19,7 @@ function sessionConfig() {
   return {
     password,
     name: "idm-erp-session",
+    sessionHeader: "x-idm-erp-session",
     maxAge: 60 * 60 * 24 * 14,
     cookie: {
       httpOnly: true,
@@ -32,4 +33,8 @@ function sessionConfig() {
 
 export async function getSession() {
   return useSession<SessionData>(sessionConfig());
+}
+
+export async function sealCurrentSession() {
+  return sealSession(sessionConfig());
 }

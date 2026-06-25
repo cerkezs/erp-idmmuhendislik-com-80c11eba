@@ -46,6 +46,7 @@ function PwdContent() {
     if (next !== next2) return setErr("Parolalar eşleşmiyor");
     const res = await changePassword({ data: { current, next } });
     if (!res.ok) return setErr(res.error || "Hata");
+    if (res.sessionToken) localStorage.setItem("idm-erp-session-token", res.sessionToken);
     setMsg("Parola güncellendi");
     setCurrent(""); setNext(""); setNext2("");
     await qc.invalidateQueries({ queryKey: ["auth-me"] });

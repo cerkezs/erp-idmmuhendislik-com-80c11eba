@@ -41,6 +41,7 @@ function AuthPage() {
     try {
       const res = await login({ data: { email, password, totp } });
       if (res.ok) {
+        if (res.sessionToken) localStorage.setItem("idm-erp-session-token", res.sessionToken);
         queryClient.setQueryData(["auth-me"], res.user);
         await router.navigate({ to: (next || "/") as never });
         return;
