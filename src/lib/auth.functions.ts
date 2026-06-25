@@ -34,10 +34,7 @@ async function sealCurrentSession() {
 async function qrSvgDataUrl(text: string): Promise<string> {
   // Use the browser/SVG renderer only. The default qrcode server entry pulls in pngjs streams,
   // which breaks in the published worker runtime before login can even run.
-  const mod = (await import("qrcode/lib/browser.js")) as {
-    default?: { toString: (text: string, opts: { type: "svg" }) => Promise<string> };
-    toString?: (text: string, opts: { type: "svg" }) => Promise<string>;
-  };
+  const mod = await import("qrcode/lib/browser.js");
   const renderer = mod.default ?? mod;
   const svg = await renderer.toString(text, { type: "svg" });
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
