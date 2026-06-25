@@ -1,10 +1,13 @@
-import { useState, type ReactNode } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Menu, X, Building2, RefreshCw } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 import { getRates } from "@/lib/rates.functions";
+import { me, logout } from "@/lib/auth.functions";
+
+const PUBLIC_PATHS = new Set<string>(["/auth", "/setup"]);
 
 const GROUP_LABEL: Record<string, string> = {
   main: "Genel",
