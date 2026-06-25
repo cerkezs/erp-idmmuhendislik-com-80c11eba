@@ -18,8 +18,8 @@ export const Route = createFileRoute("/settings_/kullanicilar")({
   component: KullanicilarPage,
 });
 
-type U = { Id: number; name?: string; email?: string; role?: string; active?: boolean; notes?: string };
-type Role = "admin" | "operator" | "viewer";
+type U = { Id: number; name?: string; email?: string; role?: string; active?: boolean; notes?: string; totp_enabled?: boolean; last_login?: string };
+type Role = "admin" | "muhasebe" | "uretim" | "operator" | "viewer";
 
 function KullanicilarPage() {
   const qc = useQueryClient();
