@@ -168,6 +168,7 @@ function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; em
     try {
       await logout();
     } finally {
+      localStorage.removeItem("idm-erp-session-token");
       qc.removeQueries({ queryKey: ["auth-me"] });
       router.navigate({ to: "/auth" as never });
     }
