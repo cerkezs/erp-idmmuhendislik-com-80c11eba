@@ -1,11 +1,12 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 
 import { renderErrorPage } from "./lib/error-page";
 
 const SESSION_TOKEN_KEY = "idm-erp-session-token";
 const SESSION_HEADER = "x-idm-erp-session";
 
-const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
+const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
     return await next();
   } catch (error) {
@@ -13,13 +14,18 @@ const errorMiddleware = createMiddleware().server(async ({ next, request }) => {
       throw error;
     }
     console.error("[startInstance] unhandled error", error);
-    // Server function / API calls expect JSON or a passthrough — never HTML.
-    const url = request?.url ? new URL(request.url) : null;
-    const isRpc =
-      !!url &&
-      (url.pathname.startsWith("/_serverFn") ||
+    // RPC / API requests must surface the error to the client — never swallow as HTML.
+    let isRpc = false;
+    try {
+      const req = getRequest();
+      const url = new URL(req.url);
+      isRpc =
+        url.pathname.startsWith("/_serverFn") ||
         url.pathname.startsWith("/api/") ||
-        request?.headers.get("accept")?.includes("application/json") === true);
+        req.headers.get("accept")?.includes("application/json") === true;
+    } catch {
+      // No request context available — fall through to HTML response.
+    }
     if (isRpc) throw error;
     return new Response(renderErrorPage(), {
       status: 500,
