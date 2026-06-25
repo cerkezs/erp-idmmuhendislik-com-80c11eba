@@ -31,12 +31,18 @@ function InvoicesPage() {
   const get = useServerFn(getInvoice);
   const save = useServerFn(saveInvoice);
   const remove = useServerFn(deleteInvoice);
+  const pay = useServerFn(payInvoice);
+  const accountsFn = useServerFn(listAccounts);
 
   const { data, isLoading, error } = useQuery({ queryKey: ["invoices"], queryFn: () => list() });
+  const accountsQ = useQuery({ queryKey: ["accounts"], queryFn: () => accountsFn() });
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<(DocData & { Id?: number }) | null>(null);
   const [loadingEdit, setLoadingEdit] = useState(false);
+  const [paying, setPaying] = useState<Invoice | null>(null);
+  const [payAccount, setPayAccount] = useState<number | null>(null);
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
 
   const saveMut = useMutation({
     mutationFn: (v: { id: number | null; data: DocData }) => save({ data: v }),
@@ -45,6 +51,16 @@ function InvoicesPage() {
   const delMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
+  });
+  const payMut = useMutation({
+    mutationFn: (v: { invoice_id: number; account_id: number; date: string }) => pay({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["invoices"] });
+      qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      setPaying(null);
+    },
+    onError: (e) => alert("Hata: " + (e as Error).message),
   });
 
   async function openEdit(id: number) {
