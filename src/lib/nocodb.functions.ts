@@ -233,6 +233,19 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "rol", uidt: "SingleLineText" },
     { title: "aktif", uidt: "Checkbox" },
     { title: "notlar", uidt: "LongText" },
+    { title: "parola_hash", uidt: "LongText" },
+    { title: "totp_secret", uidt: "LongText" },
+    { title: "totp_aktif", uidt: "Checkbox" },
+    { title: "son_giris", uidt: "DateTime" },
+    { title: "sifre_degistir", uidt: "Checkbox" },
+  ],
+  oturum_loglari: [
+    { title: "tarih", uidt: "DateTime" },
+    { title: "kullanici_id", uidt: "Number" },
+    { title: "eposta", uidt: "SingleLineText" },
+    { title: "ip", uidt: "SingleLineText" },
+    { title: "basarili", uidt: "Checkbox" },
+    { title: "notlar", uidt: "LongText" },
   ],
   mail_hesaplari: [
     { title: "isim", uidt: "SingleLineText" },
@@ -246,7 +259,6 @@ const TABLES: Record<string, ColDef[]> = {
     { title: "varsayilan", uidt: "Checkbox" },
     { title: "aktif", uidt: "Checkbox" },
   ],
-
 };
 
 
