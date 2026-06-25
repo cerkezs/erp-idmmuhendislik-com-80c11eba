@@ -32,18 +32,24 @@ const CATEGORIES = ["Yakıt", "Malzeme", "Kira", "Maaş", "Vergi", "Yemek", "Ula
 function ExpensesPage() {
   const qc = useQueryClient();
   const list = useServerFn(listExpenses);
-  const create = useServerFn(createExpense);
+  const create = useServerFn(createExpenseWithCash);
   const update = useServerFn(updateExpense);
   const remove = useServerFn(deleteExpense);
+  const accountsFn = useServerFn(listAccounts);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["expenses"],
     queryFn: () => list(),
   });
+  const accountsQ = useQuery({ queryKey: ["accounts"], queryFn: () => accountsFn() });
 
   const createMut = useMutation({
-    mutationFn: (d: Omit<Expense, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
+    mutationFn: (v: { expense: Omit<Expense, "Id">; account_id: number | null }) => create({ data: v }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["expenses"] });
+      qc.invalidateQueries({ queryKey: ["movements"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    },
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Expense> }) => update({ data: v }),
