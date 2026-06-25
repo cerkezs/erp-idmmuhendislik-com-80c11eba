@@ -148,6 +148,8 @@ function UserForm({ initial, onSubmit, submitting }: {
             <Label>Rol</Label>
             <select className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={vals.role} onChange={(e) => setVals({ ...vals, role: e.target.value as Role })}>
               <option value="admin">admin</option>
+              <option value="muhasebe">muhasebe</option>
+              <option value="uretim">uretim</option>
               <option value="operator">operator</option>
               <option value="viewer">viewer</option>
             </select>
