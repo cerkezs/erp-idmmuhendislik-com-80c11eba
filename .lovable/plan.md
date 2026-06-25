@@ -1,51 +1,75 @@
+# Roundcube kurulum hatasını çözme planı
 
-## Düzeltilmiş Mimari
+**Hata:** `ERROR 2002 (HY000): Can't connect to local server through socket '/run/mysqld/mysqld.sock'`
 
+Bu hata, Roundcube veritabanını kurmaya çalışırken MySQL/MariaDB sunucusunun çalışmadığını (veya hiç kurulu olmadığını) gösteriyor. `dbconfig-common` bağlanacak bir DB bulamadığı için patlıyor.
+
+## Çözüm adımları (VPS'te SSH ile sırayla)
+
+### 1) Şu anki diyaloğu kapat
+Ekrandaki menüde **`abort`** seçip Enter'a bas. (retry işe yaramaz çünkü MariaDB hâlâ kapalı olacak.)
+
+### 2) MariaDB'yi kur ve başlat
+```bash
+sudo apt update
+sudo apt install -y mariadb-server
+sudo systemctl enable --now mariadb
+sudo systemctl status mariadb     # "active (running)" görmelisin
 ```
-[Tarayıcı]
-    ↓
-[Lovable Frontend + Backend (ERP)]
-    ↓ (1) SMTP/TLS                    ↓ (2) HTTPS
-[mail.idmmuhendislik.com]      [noco.idmmuhendislik.com]
-   TürkTicaret mail              VPS'inizdeki NocoDB
-    ↓                              (veritabanı)
-[Alıcının inbox'ı]
+Soket kontrolü:
+```bash
+ls -l /run/mysqld/mysqld.sock
 ```
 
-VPS'iniz yalnızca NocoDB barındırıyor. Mail için VPS'e **hiçbir şey kurmaya gerek yok**.
+### 3) Root parolasını ayarla (opsiyonel ama önerilir)
+```bash
+sudo mysql_secure_installation
+```
+- Root parolası belirle
+- Anonymous users → Y
+- Disallow root login remotely → Y
+- Remove test database → Y
+- Reload privileges → Y
 
-## Yapılacaklar
+### 4) Roundcube için DB ve kullanıcı oluştur
+```bash
+sudo mysql -u root -p <<'SQL'
+CREATE DATABASE roundcube CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE USER 'roundcube'@'localhost' IDENTIFIED BY 'GÜÇLÜ_BİR_ŞİFRE_KOY';
+GRANT ALL PRIVILEGES ON roundcube.* TO 'roundcube'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+```
+> `GÜÇLÜ_BİR_ŞİFRE_KOY` kısmını gerçek bir şifre ile değiştir ve bir yere not et.
 
-### 1. `MAIL_ENC_KEY`'i Lovable secret olarak ekle (otomatik)
-- 64 karakterlik rastgele AES anahtarı üretilir ve Lovable backend'de `process.env.MAIL_ENC_KEY` olarak hazır olur.
-- Şifreleri NocoDB'ye yazmadan önce AES-256-GCM ile şifrelemek için kullanılır.
-- VPS'e dokunulmaz, sizden komut çalıştırmanız istenmez.
+### 5) Roundcube kurulumunu yeniden tetikle
+```bash
+sudo dpkg --configure -a
+# veya kuruluma kaldığı yerden devam:
+sudo apt install -y --reinstall roundcube roundcube-core roundcube-mysql
+```
+Bu sefer `dbconfig-common` sorduğunda:
+- **Yes** → veritabanını yapılandır
+- Database type: **MySQL** (MariaDB için bunu seç)
+- Yukarıda oluşturduğun roundcube kullanıcı şifresini gir
 
-### 2. Mevcut kod zaten hazır
-- `src/lib/mail.functions.ts` → şifre kasası (encrypt/decrypt) + `sendMail` + `testMailAccount`
-- `src/routes/settings_.mail.tsx` → çoklu hesap yönetimi, varsayılan seçme, test butonu
-- `mail_hesaplari` tablosu NocoDB'de ilk hesap eklenince otomatik oluşacak
+### 6) Doğrulama
+```bash
+sudo systemctl status mariadb php8.3-fpm nginx
+mysql -u roundcube -p -e "SHOW TABLES;" roundcube
+```
+Tablolar listelenmeli (users, sessions, cache, vb.).
 
-### 3. TürkTicaret'te no-reply hesabı (siz açacaksınız)
-Panel → Kurumsal E-posta → **Yönet** → **+ E-posta Hesabı Ekle**
-- Adres: `no-reply@idmmuhendislik.com`
-- Şifre: güçlü (not edin)
-- Kota: 100-500 MB
+Ardından önceki plandaki **Nginx vhost + SSL + Roundcube config** adımlarına devam edebilirsin.
 
-### 4. Uygulama içinde 4 hesabı ekleme
-`Ayarlar → Mail Hesapları` sayfasında "Şifreleme anahtarı: Tanımlı ✓" göründükten sonra **Yeni Hesap** ile:
+## Olası ek sorunlar
 
-| İsim | From Adres | SMTP Host | Port | Varsayılan |
-|---|---|---|---|---|
-| IDM Bilgi | info@idmmuhendislik.com | mail.idmmuhendislik.com | 587 | ✓ |
-| Erdoğan Öztürk | erdogan@... | aynı | 587 | |
-| Serdar | serdar@... | aynı | 587 | |
-| Otomatik Bildirim | no-reply@... | aynı | 587 | |
+- **PHP sürümü uyuşmazlığı** → `php -v` ile kontrol et, vhost'taki `php8.3-fpm.sock` yolunu kurulu sürüme göre düzelt.
+- **MariaDB başlamıyor** → `sudo journalctl -u mariadb -n 50` ile log bak. Genelde disk dolu veya `/var/lib/mysql` izinleri bozuk olur:
+  ```bash
+  sudo chown -R mysql:mysql /var/lib/mysql
+  sudo systemctl restart mariadb
+  ```
+- **Port 3306 dış dünyaya açık olmasın** → UFW kullanıyorsan sadece localhost: MariaDB varsayılan olarak `bind-address = 127.0.0.1`, dokunma.
 
-Her satırın ✈️ butonu ile test maili gönderip "✓ Gönderildi" mesajını görün.
-
-### 5. (Sonraki adım — bu plan onaylandıktan sonra)
-Mail hesapları çalışınca diğer modüllere (teklif/fatura/bildirim) "Gönderici Hesap" seçicisi eklenir; varsayılan otomatik dolar, kullanıcı isterse değiştirir.
-
-## Önemli not
-"Kendi sunucumdan gönderelim" tercihiniz aslında **deliverability açısından fark yaratmaz**: mail her durumda TürkTicaret SMTP'sinden çıkar, SPF/DKIM TürkTicaret'i yetkilendirdiği için Lovable'dan bağlanmak da sizin VPS'inizden bağlanmak da alıcıya aynı görünür. Bu nedenle ekstra mail-relay servisi kurmaktan kaçınıyoruz.
+Onaylarsan bu adımları sırayla uygulayıp sonuçlarını birlikte değerlendirelim. Şu an SSH konsoluna senin yazman gerekiyor (Lovable VPS'ine bağlanamıyor) — ben her adımın çıktısına göre yönlendiririm.
