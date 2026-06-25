@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
+
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { generateSecret, generateURI, verify } from "otplib";
@@ -39,6 +39,7 @@ function sessionConfig() {
 }
 
 async function getSession() {
+  const { useSession } = await import("@tanstack/react-start/server");
   return useSession<SessionData>(sessionConfig());
 }
 
