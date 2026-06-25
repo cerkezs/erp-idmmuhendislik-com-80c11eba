@@ -95,8 +95,8 @@ function KullanicilarPage() {
               <tr><th className="px-3 py-2 text-left">Ad</th><th className="px-3 py-2 text-left">E-posta</th><th className="px-3 py-2">Rol</th><th className="px-3 py-2">2FA</th><th className="px-3 py-2">Aktif</th><th className="px-3 py-2 text-right">İşlem</th></tr>
             </thead>
             <tbody>
-              {q.isLoading && <tr><td colSpan={5} className="px-3 py-8 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></td></tr>}
-              {!q.isLoading && items.length === 0 && <tr><td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">Henüz kayıt yok.</td></tr>}
+              {q.isLoading && <tr><td colSpan={6} className="px-3 py-8 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></td></tr>}
+              {!q.isLoading && items.length === 0 && <tr><td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">Henüz kayıt yok.</td></tr>}
               {items.map((u) => (
                 <tr key={u.Id} className="border-t border-border">
                   <td className="px-3 py-2 font-medium">{u.name}</td>
@@ -104,10 +104,15 @@ function KullanicilarPage() {
                   <td className="px-3 py-2 text-center">
                     <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">{u.role || "operator"}</span>
                   </td>
+                  <td className="px-3 py-2 text-center text-xs">
+                    {u.totp_enabled ? <span className="text-emerald-600">Aktif</span> : <span className="text-muted-foreground">—</span>}
+                  </td>
                   <td className="px-3 py-2 text-center">{u.active === false ? "—" : "✓"}</td>
                   <td className="px-3 py-2 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => { setEditing(u); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => { if (confirm(`"${u.name}" silinsin mi?`)) deleteMut.mutate(u.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(u); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" title="Parola sıfırla" onClick={() => handleResetPwd(u)}><KeyRound className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" title="2FA sıfırla" onClick={() => handleResetTotp(u)}><ShieldOff className="h-3.5 w-3.5" /></Button>
+                    <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm(`"${u.name}" silinsin mi?`)) deleteMut.mutate(u.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
                   </td>
                 </tr>
               ))}
