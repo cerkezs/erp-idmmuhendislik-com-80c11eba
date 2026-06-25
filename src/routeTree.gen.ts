@@ -32,6 +32,7 @@ import { Route as SettingsKullanicilarRouteImport } from './routes/settings_.kul
 import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
 import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bildirimler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
+import { Route as AuthSifreRouteImport } from './routes/auth.sifre'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 
 const SetupRoute = SetupRouteImport.update({
@@ -149,6 +150,11 @@ const SettingsBackupRoute = SettingsBackupRouteImport.update({
   path: '/settings/backup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthSifreRoute = AuthSifreRouteImport.update({
+  id: '/sifre',
+  path: '/sifre',
+  getParentRoute: () => AuthRoute,
+} as any)
 const ApiBackupRoute = ApiBackupRouteImport.update({
   id: '/api/backup',
   path: '/api/backup',
@@ -158,7 +164,7 @@ const ApiBackupRoute = ApiBackupRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
+  '/auth/sifre': typeof AuthSifreRoute
   '/settings/backup': typeof SettingsBackupRoute
   '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
@@ -184,7 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
+  '/auth/sifre': typeof AuthSifreRoute
   '/settings/backup': typeof SettingsBackupRoute
   '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
@@ -211,7 +219,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/companies': typeof CompaniesRoute
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
@@ -226,6 +234,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/api/backup': typeof ApiBackupRoute
+  '/auth/sifre': typeof AuthSifreRoute
   '/settings_/backup': typeof SettingsBackupRoute
   '/settings_/bildirimler': typeof SettingsBildirimlerRoute
   '/settings_/kategoriler': typeof SettingsKategorilerRoute
@@ -254,6 +263,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/api/backup'
+    | '/auth/sifre'
     | '/settings/backup'
     | '/settings/bildirimler'
     | '/settings/kategoriler'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/api/backup'
+    | '/auth/sifre'
     | '/settings/backup'
     | '/settings/bildirimler'
     | '/settings/kategoriler'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/api/backup'
+    | '/auth/sifre'
     | '/settings_/backup'
     | '/settings_/bildirimler'
     | '/settings_/kategoriler'
@@ -318,7 +330,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   CompaniesRoute: typeof CompaniesRoute
   ExpensesRoute: typeof ExpensesRoute
   FilesRoute: typeof FilesRoute
@@ -505,6 +517,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsBackupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/sifre': {
+      id: '/auth/sifre'
+      path: '/sifre'
+      fullPath: '/auth/sifre'
+      preLoaderRoute: typeof AuthSifreRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/api/backup': {
       id: '/api/backup'
       path: '/api/backup'
@@ -515,10 +534,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthSifreRoute: typeof AuthSifreRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthSifreRoute: AuthSifreRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   CompaniesRoute: CompaniesRoute,
   ExpensesRoute: ExpensesRoute,
   FilesRoute: FilesRoute,
