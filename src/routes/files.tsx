@@ -11,9 +11,9 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  listFiles, createFile, updateFile, deleteFile, listCompanies,
+  listFiles, createFile, updateFile, deleteFile, listCompanies, uploadAttachment,
 } from "@/lib/nocodb.functions";
-import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Eye, Download } from "lucide-react";
+import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Eye, Download, Upload } from "lucide-react";
 import { ListToolbar } from "@/components/list-toolbar";
 import { useListFilter, applyListFilter } from "@/hooks/use-list-filter";
 import { useMe } from "@/hooks/use-me";
