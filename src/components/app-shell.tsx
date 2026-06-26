@@ -183,6 +183,17 @@ function TopBar({ onMenu, user, path }: { onMenu: () => void; user: { name: stri
       >
         <Menu className="h-5 w-5" />
       </button>
+      {path !== "/" && (
+        <button
+          onClick={() => router.history.back()}
+          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+          title="Geri"
+          aria-label="Geri"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Geri</span>
+        </button>
+      )}
 
       <div className="flex flex-1 items-center gap-3 text-xs sm:text-sm">
         <div className="hidden items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 sm:flex">
