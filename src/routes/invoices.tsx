@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import {
   listInvoices, getInvoice, saveInvoice, deleteInvoice, payInvoice, listAccounts,
 } from "@/lib/nocodb.functions";
-import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle, BadgeDollarSign } from "lucide-react";
+import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle, BadgeDollarSign, Printer } from "lucide-react";
 import { ListToolbar } from "@/components/list-toolbar";
 import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
 import { useMe } from "@/hooks/use-me";
@@ -192,6 +192,11 @@ function InvoicesPage() {
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   )}
+                  <Button variant="ghost" size="sm" asChild title="Yazdır">
+                    <a href={`/print/fatura/${q.Id}`} target="_blank" rel="noreferrer">
+                      <Printer className="h-3.5 w-3.5" />
+                    </a>
+                  </Button>
                   {canDelete && (
                   <Button variant="ghost" size="sm" onClick={() => {
                     if (confirm(`"${q.number || q.Id}" silinsin mi?`)) delMut.mutate(q.Id);

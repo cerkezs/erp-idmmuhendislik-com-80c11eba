@@ -8,7 +8,7 @@ import { DocumentForm, type DocData } from "@/components/document-form";
 import {
   listQuotes, getQuote, saveQuote, deleteQuote, convertQuoteToInvoice,
 } from "@/lib/nocodb.functions";
-import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowRightCircle } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowRightCircle, Printer } from "lucide-react";
 import { ListToolbar } from "@/components/list-toolbar";
 import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
 import { useMe } from "@/hooks/use-me";
@@ -170,6 +170,11 @@ function QuotesPage() {
                       <ArrowRightCircle className="h-3.5 w-3.5 text-emerald-600" />
                     </Button>
                   )}
+                  <Button variant="ghost" size="sm" asChild title="Yazdır">
+                    <a href={`/print/teklif/${q.Id}`} target="_blank" rel="noreferrer">
+                      <Printer className="h-3.5 w-3.5" />
+                    </a>
+                  </Button>
                   {canWrite && (
                   <Button variant="ghost" size="sm" onClick={() => openEdit(q.Id)}>
                     <Pencil className="h-3.5 w-3.5" />

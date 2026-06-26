@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { AppShell } from "@/components/app-shell";
 import { MODULES } from "@/lib/modules";
-import { dashboardSummary } from "@/lib/nocodb.functions";
+import { dashboardSummary, runNotificationTriggers } from "@/lib/nocodb.functions";
 import {
   TrendingUp, TrendingDown, AlertCircle, CheckCircle2,
   Wallet, ReceiptText, Clock, Factory, Info, Loader2,
@@ -29,11 +30,19 @@ const NOTIF_ICON: Record<string, typeof Info> = {
 
 function Dashboard() {
   const summary = useServerFn(dashboardSummary);
+  const triggers = useServerFn(runNotificationTriggers);
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: () => summary(),
     refetchInterval: 60_000,
   });
+  const fired = useRef(false);
+  useEffect(() => {
+    if (fired.current) return;
+    fired.current = true;
+    triggers().catch(() => {});
+  }, [triggers]);
+
 
   const s = data;
   const cards = [
