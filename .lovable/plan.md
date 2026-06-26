@@ -1,71 +1,74 @@
-Mail başlığı (#7) hariç tüm eksikleri sırayla tamamlayacağım. Çıktıyı **3 batch** halinde teslim edeceğim — her batch derleme/test sonrası bir sonrakine geçecek.
+## Hedef
+Tüm sistemi senin VPS'inde (104.247.163.120) çalıştırmak. Lovable sadece kod editörü olarak kalsın — yayın, çalışan uygulama ve veriler tamamen senin sunucunda olsun.
 
-## Batch 1 — Liste araçları + Toast + Rol UI (#1, #5, #8 kısmi)
+## Adımlar
 
-**Paylaşılan `ListToolbar`**
-- `src/components/list-toolbar.tsx` oluştur — arama input'u, durum dropdown'u (opsiyonel), tarih aralığı (opsiyonel), sıralama (alan + asc/desc), sonuç sayacı.
-- `src/hooks/use-list-filter.ts` — `{ query, status, from, to, sortKey, sortDir }` state'i + `filter+sort` memo helper'ı.
+### 1. GitHub bağlantısı (sen yapacaksın)
+Lovable sol alttaki **+** menüsü → **GitHub** → **Connect project** → repo adı: `idm-erp`. Bağlandığında kod otomatik push olur, bundan sonra her Lovable değişikliği GitHub'a yansır.
 
-**Uygulanacak modüller** (her birinde aktif/tamamlanmış ayrımı uygun yerlerde):
-- Firmalar — arama, sıralama (ad, eklenme), tür filtresi
-- Ürünler — arama, döviz filtresi, stok < min filtresi
-- Teklifler — durum filtresi + Aktif/Kapalı bölümlemesi, sıralama
-- Faturalar — durum filtresi + Açık/Ödenmiş bölümlemesi, vadesi geçen vurgusu
-- Giderler — kategori filtresi, tarih aralığı, sıralama
-- Kasa — hesap filtresi, giriş/çıkış filtresi, tarih aralığı
-- Aksiyon & Görev — durum filtresi + Açık/Tamamlanmış bölümlemesi
-- Dosyalar — kategori filtresi (mevcut firma ağacına ek olarak)
-- Bildirimler — tip filtresi, okundu filtresi
-- Üretim — mevcut toolbar'ı paylaşılan bileşene refactor et
+### 2. Build configini Node'a çevir (ben yapacağım)
+Şu an `@lovable.dev/vite-tanstack-config` Cloudflare Worker hedefli derliyor — VPS'inde çalışmaz. Değişiklikler:
+- `vite.config.ts` — Lovable config paketini bırak, doğrudan `@tanstack/react-start/plugin/vite` + Nitro `node-server` preset kullan.
+- `src/server.ts` — Cloudflare `fetch` shape'i yerine Node entry'ye uygun hale getir.
+- `package.json` — `start` scripti ekle (`node .output/server/index.mjs`).
 
-**Toast (Sonner)**
-- `src/components/ui/sonner.tsx` zaten var. `src/routes/__root.tsx`'e `<Toaster />` ekle.
-- Tüm mutation'larda `onSuccess`/`onError` ile `toast.success` / `toast.error`. Yardımcı: `src/lib/toast.ts` (`crudToast(action, name)`).
+Bu değişiklikler Lovable preview'ında da çalışmaya devam edecek (Lovable Node build'i de destekliyor), ama artık `bun run build` çıktısı VPS'inde direkt çalışabilir hale gelecek.
 
-**Rol bazlı UI**
-- `src/hooks/use-me.ts` — mevcut `me` server fn'ini React Query ile sarmalar.
-- `MODULES`'a `roles?: ("admin"|"editor"|"viewer")[]` alanı; `AppShell`'de menü filtrelemesi.
-- "Sil", "Düzenle", "Faturaya çevir", "Tahsil et", "Şifre sıfırla" gibi yazma butonları yalnız `admin`/`editor` için. `viewer` rolünde formlar read-only.
+### 3. Ortam değişkenleri (sen `.env` dosyana koyacaksın)
+VPS'te `/opt/idm-erp/.env`:
+```
+SESSION_SECRET=<64 hex — ben üretip vereceğim>
+NOCODB_URL=https://noco.idmmuhendislik.com
+NOCODB_TOKEN=<mevcut>
+CRON_TOKEN=<yeni — ben üretip vereceğim>
+HEALTH_API_URL=https://webmail.idmmuhendislik.com/__health
+HEALTH_API_TOKEN=<mevcut>
+PORT=3000
+```
 
-## Batch 2 — Bildirim tetikleyiciler + Üretim/Stok bağı (#3, #6)
+### 4. VPS kurulum (SSH komutlarını ben vereceğim, sen çalıştıracaksın)
+```bash
+# Node 20 + bun + pm2
+curl -fsSL https://bun.sh/install | bash
+npm i -g pm2
 
-**`scanTriggers` server fn** (`src/lib/nocodb.functions.ts`)
-- Vadesi geçmiş açık faturalar → `bildirimler` tipinde 1 kayıt (gün+fatura no anahtarıyla idempotent).
-- Stoğu `min_stock` altına düşen ürünler → `warning` bildirim.
-- Bugünü geçen ve hâlâ açık görevler → `warning` bildirim.
-- Aynı gün aynı kaynak için tekrar üretmemek üzere `kaynak_key` alanı kontrolü.
+# Repo
+cd /opt && git clone https://github.com/<user>/idm-erp.git && cd idm-erp
+bun install
+bun run build
 
-**Tetikleme yerleri**
-- `AppShell` mount'unda + her 30 dakikada bir `useQuery` ile background çalıştır.
-- `/api/public/cron-scan` server route — harici cron çağırırsa diye token korumalı.
+# .env oluştur (yukarıdaki içerikle)
+nano .env
 
-**Üretim/Stok**
-- `urunler` tablosuna `min_stock` (Decimal) alanı (setup.tsx + schema).
-- `completeProduction` sonrasında, üretim BOM kalemleri stoğu düşürür; stok `min_stock` altına inerse `scanTriggers`'ı çağırır.
-- Ürünler listesinde "stok altında" rozeti.
+# Çalıştır
+pm2 start ".output/server/index.mjs" --name idm-erp
+pm2 save && pm2 startup
+```
 
-## Batch 3 — Teklif/Fatura yazdır + Gerçek dosya upload (#2, #4)
+### 5. Nginx reverse proxy (komutları vereceğim)
+`erp.idmmuhendislik.com` için yeni vhost: 127.0.0.1:3000'e proxy + Certbot ile Let's Encrypt SSL.
 
-**Yazdır / PDF**
-- `src/routes/quotes.$id.print.tsx` ve `src/routes/invoices.$id.print.tsx` — A4 yazdırılabilir görünüm (firma başlığı, kalemler tablosu, toplam, IBAN/şartlar). `@media print` ile temiz çıktı.
-- Tarayıcının "Yazdır → PDF olarak kaydet" akışı; harici PDF kütüphanesi yok (Worker uyumlu olmayanları zaten kullanmıyoruz).
-- Liste satırına "Yazdır" butonu (yeni sekmede açar).
-- Faturada "Mail ile gönder" — mevcut `sendMail` ile, body'de yazdırma linki.
+### 6. DNS cutover
+`erp.idmmuhendislik.com` A kaydı şu an Lovable IP'sinde; VPS IP'sine (`104.247.163.120`) çevireceksin. 5-30 dk arası kesinti olur — **mesai sonrası** yapılması önerilir.
 
-**Gerçek dosya upload**
-- `dosyalar` tablosuna NocoDB Attachment alanı `file_att` + setup.tsx güncelle.
-- `src/lib/nocodb.functions.ts` → `uploadFile` server fn: `FormData` alır, NocoDB `/api/v2/storage/upload` çağrısı yapar, dönen URL'i `dosyalar` kaydının `url` alanına yazar.
-- `files.tsx` formuna `<input type="file">` + sürükle-bırak alanı. URL alanı geriye dönük uyumluluk için kalır.
-- Firma kaydı formunda da "Bu firmaya dosya yükle" kısa yolu.
+### 7. Cron (zaten hazır endpoint)
+```bash
+crontab -e
+*/15 * * * * curl -s -H "x-cron-token: $CRON_TOKEN" https://erp.idmmuhendislik.com/api/public/cron-scan
+```
 
----
+### 8. Lovable yayınını kapat
+DNS cutover sonrası Lovable Project Settings → Unpublish. `*.lovable.app` URL'i çöker, sadece `erp.idmmuhendislik.com` aktif kalır. Lovable hâlâ kod editörü olarak çalışır.
 
-## Teknik notlar
-- Hiçbir Node-only paket eklenmeyecek (Worker uyumu).
-- DB değişiklikleri `src/routes/setup.tsx` üzerinden idempotent şekilde uygulanacak.
-- Mevcut `productions.tsx` `ListToolbar`'ı paylaşılan bileşeni kullanacak şekilde refactor edilecek — davranış aynı.
-- Mail (#7) bu plana dahil değil, sonra ele alınacak.
+### 9. Rozet
+Self-host'ta Lovable rozeti zaten enjekte edilmiyor — VPS'inde yayınladığında "Edit with Lovable" otomatik kaybolur. Pro plan'a gerek yok.
 
----
+## Riskler
+- **Build kırılabilir:** Cloudflare → Node geçişinde bazı bağımlılıklar (qrcode, fflate) sorun çıkarabilir; build hatalarını sırayla düzelteceğim.
+- **DNS kesintisi:** 5-30 dk. Önce VPS'te app ayakta olmalı, sonra DNS değişir.
+- **Veri:** NocoDB zaten senin sunucunda — kayıp riski yok.
 
-Onay verirseniz Batch 1 ile başlıyorum.
+## Senin onayın gerekenler
+1. **GitHub repo adı `idm-erp` uygun mu?** Farklı isim istiyorsan söyle.
+2. **DNS cutover ne zaman?** Bugün mü, hafta sonu mu, akşam mı?
+3. **Plan onayı verir misin?** Onaylarsan sırayla başlarım: önce vite/server config Node'a çevrilir → sen GitHub bağlarsın → SSH komutlarını veririm → cutover.
