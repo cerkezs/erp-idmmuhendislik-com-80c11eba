@@ -51,22 +51,33 @@ async function listAll(tableId: string): Promise<Array<Record<string, unknown>>>
   return out;
 }
 
-// CSV helpers
+// CSV helpers — Excel TR uyumu için UTF-16 LE + TAB ayırıcı kullanıyoruz.
+// (UTF-8 BOM Excel TR'de "sep=;" hint'i ile çakışıp Türkçe karakterleri bozuyordu.)
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
   const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-  if (/[",\n\r;]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  if (/["\t\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
   return s;
 }
 
-function toCsv(rows: Array<Record<string, unknown>>): string {
-  // Excel TR uyumu: sep=; ipucu + BOM, ayırıcı ;
-  const header = "sep=;\n\ufeff";
-  if (!rows.length) return header;
+function utf16LE(text: string): Uint8Array {
+  // BOM (FF FE) + UTF-16 LE byte dizisi
+  const buf = new Uint8Array(2 + text.length * 2);
+  buf[0] = 0xff; buf[1] = 0xfe;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    buf[2 + i * 2] = code & 0xff;
+    buf[2 + i * 2 + 1] = (code >> 8) & 0xff;
+  }
+  return buf;
+}
+
+function toCsvBytes(rows: Array<Record<string, unknown>>): Uint8Array {
+  if (!rows.length) return utf16LE("");
   const cols = Array.from(rows.reduce((s, r) => { Object.keys(r).forEach((k) => s.add(k)); return s; }, new Set<string>()));
-  const lines = [cols.join(";")];
-  for (const r of rows) lines.push(cols.map((c) => csvEscape(r[c])).join(";"));
-  return header + lines.join("\r\n");
+  const lines = [cols.join("\t")];
+  for (const r of rows) lines.push(cols.map((c) => csvEscape(r[c])).join("\t"));
+  return utf16LE(lines.join("\r\n"));
 }
 
 function slug(s: string): string {
@@ -174,13 +185,13 @@ export const Route = createFileRoute("/api/backup")({
             // Düz mod: tablo başına bir CSV
             for (const s of selected) {
               for (const t of SECTIONS[s].tables) {
-                files[`${t.name}.csv`] = strToU8(toCsv(rowsByTable[t.name] || []));
+                files[`${t.name}.csv`] = toCsvBytes(rowsByTable[t.name] || []);
               }
             }
           } else {
             // Firma-bazlı mod
             // firmalar.csv köke
-            if (selected.includes("firmalar")) files["firmalar.csv"] = strToU8(toCsv(rowsByTable["firmalar"] || []));
+            if (selected.includes("firmalar")) files["firmalar.csv"] = toCsvBytes(rowsByTable["firmalar"] || []);
 
             // Firma adlarını topla (kayıtlı + dosyalarda geçen)
             const folders = new Map<string, string>(); // folderName -> slug
@@ -211,7 +222,7 @@ export const Route = createFileRoute("/api/backup")({
                     grouped.get(folder)!.push(r);
                   }
                   for (const [folder, list] of grouped) {
-                    files[`${slug(folder)}/${t.name}.csv`] = strToU8(toCsv(list));
+                    files[`${slug(folder)}/${t.name}.csv`] = toCsvBytes(list);
                   }
                 } else if (t.companyField || t.companyNameField) {
                   const grouped = new Map<string, Array<Record<string, unknown>>>();
@@ -223,11 +234,11 @@ export const Route = createFileRoute("/api/backup")({
                     grouped.get(folder)!.push(r);
                   }
                   for (const [folder, list] of grouped) {
-                    files[`${slug(folder)}/${t.name}.csv`] = strToU8(toCsv(list));
+                    files[`${slug(folder)}/${t.name}.csv`] = toCsvBytes(list);
                   }
                 } else {
                   // Firma ile ilişkilendirilemez (kasa, bildirim) -> kök
-                  files[`${t.name}.csv`] = strToU8(toCsv(rows));
+                  files[`${t.name}.csv`] = toCsvBytes(rows);
                 }
               }
             }
