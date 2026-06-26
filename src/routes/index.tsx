@@ -30,11 +30,19 @@ const NOTIF_ICON: Record<string, typeof Info> = {
 
 function Dashboard() {
   const summary = useServerFn(dashboardSummary);
+  const triggers = useServerFn(runNotificationTriggers);
   const { data, isLoading, error } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: () => summary(),
     refetchInterval: 60_000,
   });
+  const fired = useRef(false);
+  useEffect(() => {
+    if (fired.current) return;
+    fired.current = true;
+    triggers().catch(() => {});
+  }, [triggers]);
+
 
   const s = data;
   const cards = [
