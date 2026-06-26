@@ -48,30 +48,40 @@ function TasksPage() {
 
   const { data, isLoading, error } = useQuery({ queryKey: ["tasks"], queryFn: () => list() });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<Task, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); crudToast("create", "Görev"); },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Task> }) => update({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); crudToast("delete", "Görev"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<Task | null>(null);
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<string>("all");
 
   const all = (data || []) as Task[];
-  const rows = filter === "all" ? all : all.filter((t) => t.status === filter);
   const counts = {
     open: all.filter((t) => t.status === "Açık").length,
     progress: all.filter((t) => t.status === "Devam").length,
     done: all.filter((t) => t.status === "Tamamlandı").length,
   };
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "due_date", initialSortDir: "asc" });
+  const rows = useFilteredList<Task>(all, filters, {
+    searchKeys: ["title", "description", "assignee"],
+    statusKey: "status",
+    categoryKey: "priority",
+    dateKey: "due_date",
+  });
 
   return (
     <AppShell>
