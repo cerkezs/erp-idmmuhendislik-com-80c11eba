@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import {
   listInvoices, getInvoice, saveInvoice, deleteInvoice, payInvoice, listAccounts,
 } from "@/lib/nocodb.functions";
-import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle, BadgeDollarSign } from "lucide-react";
+import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle, BadgeDollarSign, Printer } from "lucide-react";
 import { ListToolbar } from "@/components/list-toolbar";
 import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
 import { useMe } from "@/hooks/use-me";
