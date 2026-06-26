@@ -101,6 +101,7 @@ function FilesPage() {
             <p className="text-sm text-muted-foreground">{all.length} kayıt · {byCompany.length} klasör</p>
           </div>
         </div>
+        {canWrite && (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Yeni Dosya</Button></DialogTrigger>
           <FileForm initial={editing} companies={(companies as Array<{ Id: number; name: string }>) || []}
@@ -110,6 +111,7 @@ function FilesPage() {
               setOpen(false); setEditing(null);
             }} submitting={createMut.isPending || updateMut.isPending} />
         </Dialog>
+        )}
       </div>
 
       {error && (
