@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck, Bell } from "lucide-react";
+import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck, Bell, ArrowLeft } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 import { getRates } from "@/lib/rates.functions";
@@ -128,14 +128,14 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main */}
       <div className="flex min-h-screen w-full flex-col md:pl-72">
-        <TopBar onMenu={() => setOpen(true)} user={userQ.data} />
+        <TopBar onMenu={() => setOpen(true)} user={userQ.data} path={path} />
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );
 }
 
-function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; email: string; role: string; mustChangePassword?: boolean } }) {
+function TopBar({ onMenu, user, path }: { onMenu: () => void; user: { name: string; email: string; role: string; mustChangePassword?: boolean }; path: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const { data, isFetching, refetch } = useQuery({
@@ -183,6 +183,17 @@ function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; em
       >
         <Menu className="h-5 w-5" />
       </button>
+      {path !== "/" && (
+        <button
+          onClick={() => router.history.back()}
+          className="flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
+          title="Geri"
+          aria-label="Geri"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Geri</span>
+        </button>
+      )}
 
       <div className="flex flex-1 items-center gap-3 text-xs sm:text-sm">
         <div className="hidden items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 sm:flex">
