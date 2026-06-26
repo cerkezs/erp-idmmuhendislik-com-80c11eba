@@ -144,13 +144,14 @@ function TasksPage() {
 
       <div className="space-y-2">
         {isLoading && <div className="p-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>}
-        {!isLoading && rows.length === 0 && <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Görev yok.</div>}
+        {!isLoading && rows.length === 0 && <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{all.length === 0 ? "Görev yok." : "Filtreyle eşleşen görev yok."}</div>}
         {rows.map((t) => {
           const done = t.status === "Tamamlandı";
           const overdue = t.due_date && !done && t.due_date < new Date().toISOString().slice(0, 10);
           return (
             <div key={t.Id} className={`flex items-start gap-3 rounded-lg border bg-card p-3 ${done ? "opacity-60" : ""} ${overdue ? "border-destructive/50" : "border-border"}`}>
               <button className="mt-0.5 grid h-5 w-5 place-items-center rounded border border-border hover:bg-muted"
+                disabled={!canWrite}
                 onClick={() => updateMut.mutate({ id: t.Id, patch: { status: done ? "Açık" : "Tamamlandı" } })}>
                 {done && <Check className="h-3 w-3" />}
               </button>
@@ -164,8 +165,8 @@ function TasksPage() {
                 </div>
                 {t.description && <div className="mt-1 text-sm text-muted-foreground">{t.description}</div>}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="sm" onClick={() => { if (confirm("Sil?")) deleteMut.mutate(t.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+              {canWrite && <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+              {canDelete && <Button variant="ghost" size="sm" onClick={() => { if (confirm("Sil?")) deleteMut.mutate(t.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
             </div>
           );
         })}
