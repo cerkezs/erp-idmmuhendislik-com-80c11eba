@@ -195,8 +195,8 @@ function FilesPage() {
                           ? <a href={f.url} download={f.name || true} rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
                           : <Download className="h-3.5 w-3.5" />}
                       </Button>
-                      <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm("Kayıt silinsin mi? (Sunucudaki dosya silinmez)")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      {canWrite && <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+                      {canDelete && <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm("Kayıt silinsin mi? (Sunucudaki dosya silinmez)")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
                     </td>
                   </tr>
                 ))}
