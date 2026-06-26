@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck, Bell } from "lucide-react";
+import { Menu, X, Building2, RefreshCw, LogOut, ShieldCheck, Bell, ArrowLeft } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { cn } from "@/lib/utils";
 import { getRates } from "@/lib/rates.functions";
