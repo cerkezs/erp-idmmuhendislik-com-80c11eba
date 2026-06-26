@@ -1747,3 +1747,103 @@ export const unreadCount = createServerFn({ method: "GET" }).handler(async () =>
   } catch { return { count: 0 }; }
 });
 
+// ---------- Bildirim tetikleyicileri ----------
+// Vadesi geçmiş faturalar, kritik stok, gecikmiş görevler için bildirim üretir.
+// Aynı (link + başlık) için son 7 gün içinde bildirim varsa tekrar oluşturmaz.
+export const runNotificationTriggers = createServerFn({ method: "POST" }).handler(
+  async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+
+    const [invs, prods, tasks, notifs] = await Promise.all([
+      listRecords("faturalar", 1000).catch(() => [] as Record_[]),
+      listRecords("urunler", 1000).catch(() => [] as Record_[]),
+      listRecords("gorevler", 1000).catch(() => [] as Record_[]),
+      listRecords("bildirimler", 500).catch(() => [] as Record_[]),
+    ]);
+
+    const recentKeys = new Set(
+      notifs
+        .filter((n) => ((n as Record<string, unknown>).tarih as string) >= weekAgo)
+        .map((n) => {
+          const r = n as Record<string, unknown>;
+          return `${r.link || ""}::${r.baslik || ""}`;
+        }),
+    );
+
+    const queue: Array<{ type: string; title: string; message: string; link: string }> = [];
+    const push = (item: { type: string; title: string; message: string; link: string }) => {
+      const key = `${item.link}::${item.title}`;
+      if (!recentKeys.has(key)) {
+        recentKeys.add(key);
+        queue.push(item);
+      }
+    };
+
+    // Vadesi geçmiş faturalar
+    for (const i of invs) {
+      const r = i as Record<string, unknown>;
+      const durum = (r.durum as string) || "";
+      if (durum === "Ödendi" || durum === "İptal") continue;
+      const due = r.vade_tarihi as string;
+      if (!due) continue;
+      if (due < today) {
+        push({
+          type: "warning",
+          title: `Vade geçti: ${r.numara || r.Id}`,
+          message: `${r.firma_adi || ""} · ${Number(r.genel_toplam || 0).toLocaleString("tr-TR")} ${r.para_birimi || "TRY"} · vade ${due}`,
+          link: "/invoices",
+        });
+      } else if (due <= new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10)) {
+        push({
+          type: "info",
+          title: `Vade yaklaşıyor: ${r.numara || r.Id}`,
+          message: `${r.firma_adi || ""} · vade ${due}`,
+          link: "/invoices",
+        });
+      }
+    }
+
+    // Kritik stok (stok <= 0)
+    for (const p of prods) {
+      const r = p as Record<string, unknown>;
+      const stok = Number(r.stok);
+      if (Number.isFinite(stok) && stok <= 0) {
+        push({
+          type: "warning",
+          title: `Stok bitti: ${r.ad || r.kod || r.Id}`,
+          message: `${r.kod || ""} · mevcut ${stok} ${r.birim || ""}`,
+          link: "/products",
+        });
+      }
+    }
+
+    // Gecikmiş görevler
+    for (const t of tasks) {
+      const r = t as Record<string, unknown>;
+      const durum = (r.durum as string) || "";
+      if (durum === "Tamamlandı" || durum === "İptal") continue;
+      const due = r.son_tarih as string;
+      if (due && due < today) {
+        push({
+          type: "warning",
+          title: `Görev gecikti: ${r.baslik || r.Id}`,
+          message: `${r.atanan || ""} · son ${due}`,
+          link: "/actions",
+        });
+      }
+    }
+
+    for (const item of queue) {
+      try {
+        await createRecord(
+          "bildirimler",
+          toTr({ date: today, read: false, user: "", ...item }, BILDIRIM_MAP),
+        );
+      } catch { /* sessizce geç */ }
+    }
+
+    return { created: queue.length };
+  },
+);
+
