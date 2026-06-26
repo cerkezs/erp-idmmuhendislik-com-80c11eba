@@ -99,6 +99,7 @@ function TasksPage() {
             </p>
           </div>
         </div>
+        {canWrite && (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Yeni Görev</Button></DialogTrigger>
           <TaskForm initial={editing}
@@ -110,16 +111,25 @@ function TasksPage() {
             submitting={createMut.isPending || updateMut.isPending}
           />
         </Dialog>
+        )}
       </div>
 
-      <div className="mb-3 flex gap-2 text-xs">
-        {["all", ...STATUS].map((s) => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`rounded-md px-3 py-1.5 ${filter === s ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"}`}>
-            {s === "all" ? "Tümü" : s}
-          </button>
-        ))}
-      </div>
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: başlık, açıklama, atanan…"
+        statusOptions={STATUS.map((s) => ({ value: s, label: s }))}
+        categoryOptions={PRIO.map((p) => ({ value: p, label: p }))}
+        showDates
+        sortOptions={[
+          { value: "due_date-asc", key: "due_date", dir: "asc", label: "Son tarih (yakın)" },
+          { value: "due_date-desc", key: "due_date", dir: "desc", label: "Son tarih (uzak)" },
+          { value: "priority-desc", key: "priority", dir: "desc", label: "Öncelik" },
+          { value: "title-asc", key: "title", dir: "asc", label: "Başlık (A→Z)" },
+        ]}
+        totalCount={all.length}
+        filteredCount={rows.length}
+      />
 
       {error && (
         <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm">
