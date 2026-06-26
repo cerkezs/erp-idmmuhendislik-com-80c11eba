@@ -43,32 +43,36 @@ function FilesPage() {
   const { data, isLoading, error } = useQuery({ queryKey: ["files"], queryFn: () => list() });
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: () => listCo() });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<FileRow, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["files"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["files"] }); crudToast("create", "Dosya"); },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<FileRow> }) => update({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["files"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["files"] }); crudToast("update", "Dosya"); },
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["files"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["files"] }); crudToast("delete", "Dosya"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<FileRow | null>(null);
   const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
   const [selectedCo, setSelectedCo] = useState<string>("all");
 
   const all = (data || []) as FileRow[];
+  const { filters, setFilters } = useListFilter({ initialSortKey: "name", initialSortDir: "asc" });
   const filtered = useMemo(() => {
-    return all.filter((f) => {
-      if (selectedCo !== "all" && (f.company_name || "—") !== selectedCo) return false;
-      if (q && !`${f.name} ${f.notes} ${f.folder}`.toLowerCase().includes(q.toLowerCase())) return false;
-      return true;
+    const base = selectedCo === "all" ? all : all.filter((f) => (f.company_name || "—") === selectedCo);
+    return applyListFilter(base, filters, {
+      searchKeys: ["name", "notes", "folder"],
+      categoryKey: "category",
     });
-  }, [all, q, selectedCo]);
+  }, [all, filters, selectedCo]);
 
   const byCompany = useMemo(() => {
     const counts = new Map<string, number>();
