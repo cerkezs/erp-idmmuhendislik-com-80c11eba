@@ -142,21 +142,22 @@ function FilesPage() {
         </aside>
 
         <div>
-          <ListToolbar
-            filters={filters}
-            setFilters={setFilters}
-            placeholder="Ara: ad, klasör, not…"
-            categoryOptions={CATS.map((c) => ({ value: c, label: c }))}
-            sortOptions={[
-              { value: "name-asc", key: "name", dir: "asc", label: "Ad (A→Z)" },
-              { value: "name-desc", key: "name", dir: "desc", label: "Ad (Z→A)" },
-              { value: "date-desc", key: "date", dir: "desc", label: "Yeni" },
-              { value: "date-asc", key: "date", dir: "asc", label: "Eski" },
-            ]}
-            totalCount={all.length}
-            filteredCount={filtered.length}
-            className="mb-3"
-          />
+          <div className="mb-3">
+            <ListToolbar
+              filters={filters}
+              setFilters={setFilters}
+              placeholder="Ara: ad, klasör, not…"
+              categoryOptions={CATS.map((c) => ({ value: c, label: c }))}
+              sortOptions={[
+                { value: "name-asc", key: "name", dir: "asc", label: "Ad (A→Z)" },
+                { value: "name-desc", key: "name", dir: "desc", label: "Ad (Z→A)" },
+                { value: "date-desc", key: "date", dir: "desc", label: "Yeni" },
+                { value: "date-asc", key: "date", dir: "asc", label: "Eski" },
+              ]}
+              totalCount={all.length}
+              filteredCount={filtered.length}
+            />
+          </div>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
