@@ -185,13 +185,13 @@ export const Route = createFileRoute("/api/backup")({
             // Düz mod: tablo başına bir CSV
             for (const s of selected) {
               for (const t of SECTIONS[s].tables) {
-                files[`${t.name}.csv`] = strToU8(toCsv(rowsByTable[t.name] || []));
+                files[`${t.name}.csv`] = toCsvBytes(rowsByTable[t.name] || []);
               }
             }
           } else {
             // Firma-bazlı mod
             // firmalar.csv köke
-            if (selected.includes("firmalar")) files["firmalar.csv"] = strToU8(toCsv(rowsByTable["firmalar"] || []));
+            if (selected.includes("firmalar")) files["firmalar.csv"] = toCsvBytes(rowsByTable["firmalar"] || []);
 
             // Firma adlarını topla (kayıtlı + dosyalarda geçen)
             const folders = new Map<string, string>(); // folderName -> slug
@@ -222,7 +222,7 @@ export const Route = createFileRoute("/api/backup")({
                     grouped.get(folder)!.push(r);
                   }
                   for (const [folder, list] of grouped) {
-                    files[`${slug(folder)}/${t.name}.csv`] = strToU8(toCsv(list));
+                    files[`${slug(folder)}/${t.name}.csv`] = toCsvBytes(list);
                   }
                 } else if (t.companyField || t.companyNameField) {
                   const grouped = new Map<string, Array<Record<string, unknown>>>();
@@ -234,11 +234,11 @@ export const Route = createFileRoute("/api/backup")({
                     grouped.get(folder)!.push(r);
                   }
                   for (const [folder, list] of grouped) {
-                    files[`${slug(folder)}/${t.name}.csv`] = strToU8(toCsv(list));
+                    files[`${slug(folder)}/${t.name}.csv`] = toCsvBytes(list);
                   }
                 } else {
                   // Firma ile ilişkilendirilemez (kasa, bildirim) -> kök
-                  files[`${t.name}.csv`] = strToU8(toCsv(rows));
+                  files[`${t.name}.csv`] = toCsvBytes(rows);
                 }
               }
             }
