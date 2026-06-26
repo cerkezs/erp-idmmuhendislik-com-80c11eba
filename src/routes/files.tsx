@@ -13,7 +13,11 @@ import {
 import {
   listFiles, createFile, updateFile, deleteFile, listCompanies,
 } from "@/lib/nocodb.functions";
-import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Search, Eye, Download } from "lucide-react";
+import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Eye, Download } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, applyListFilter } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/files")({
   head: () => ({ meta: [{ title: "Dosyalar — IDM ERP" }] }),
