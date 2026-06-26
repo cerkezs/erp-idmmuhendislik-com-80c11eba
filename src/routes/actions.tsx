@@ -14,6 +14,10 @@ import {
   listTasks, createTask, updateTask, deleteTask,
 } from "@/lib/nocodb.functions";
 import { ListChecks, Plus, Pencil, Trash2, Loader2, AlertCircle, Check } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/actions")({
   head: () => ({ meta: [{ title: "Aksiyon & Görev — IDM ERP" }] }),
@@ -44,30 +48,40 @@ function TasksPage() {
 
   const { data, isLoading, error } = useQuery({ queryKey: ["tasks"], queryFn: () => list() });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<Task, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); crudToast("create", "Görev"); },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Task> }) => update({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["tasks"] }); crudToast("delete", "Görev"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<Task | null>(null);
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<string>("all");
 
   const all = (data || []) as Task[];
-  const rows = filter === "all" ? all : all.filter((t) => t.status === filter);
   const counts = {
     open: all.filter((t) => t.status === "Açık").length,
     progress: all.filter((t) => t.status === "Devam").length,
     done: all.filter((t) => t.status === "Tamamlandı").length,
   };
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "due_date", initialSortDir: "asc" });
+  const rows = useFilteredList<Task>(all, filters, {
+    searchKeys: ["title", "description", "assignee"],
+    statusKey: "status",
+    categoryKey: "priority",
+    dateKey: "due_date",
+  });
 
   return (
     <AppShell>
@@ -85,6 +99,7 @@ function TasksPage() {
             </p>
           </div>
         </div>
+        {canWrite && (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Yeni Görev</Button></DialogTrigger>
           <TaskForm initial={editing}
@@ -96,16 +111,25 @@ function TasksPage() {
             submitting={createMut.isPending || updateMut.isPending}
           />
         </Dialog>
+        )}
       </div>
 
-      <div className="mb-3 flex gap-2 text-xs">
-        {["all", ...STATUS].map((s) => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`rounded-md px-3 py-1.5 ${filter === s ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/80"}`}>
-            {s === "all" ? "Tümü" : s}
-          </button>
-        ))}
-      </div>
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: başlık, açıklama, atanan…"
+        statusOptions={STATUS.map((s) => ({ value: s, label: s }))}
+        categoryOptions={PRIO.map((p) => ({ value: p, label: p }))}
+        showDates
+        sortOptions={[
+          { value: "due_date-asc", key: "due_date", dir: "asc", label: "Son tarih (yakın)" },
+          { value: "due_date-desc", key: "due_date", dir: "desc", label: "Son tarih (uzak)" },
+          { value: "priority-desc", key: "priority", dir: "desc", label: "Öncelik" },
+          { value: "title-asc", key: "title", dir: "asc", label: "Başlık (A→Z)" },
+        ]}
+        totalCount={all.length}
+        filteredCount={rows.length}
+      />
 
       {error && (
         <div className="mb-4 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm">
@@ -120,13 +144,14 @@ function TasksPage() {
 
       <div className="space-y-2">
         {isLoading && <div className="p-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>}
-        {!isLoading && rows.length === 0 && <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">Görev yok.</div>}
+        {!isLoading && rows.length === 0 && <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">{all.length === 0 ? "Görev yok." : "Filtreyle eşleşen görev yok."}</div>}
         {rows.map((t) => {
           const done = t.status === "Tamamlandı";
           const overdue = t.due_date && !done && t.due_date < new Date().toISOString().slice(0, 10);
           return (
             <div key={t.Id} className={`flex items-start gap-3 rounded-lg border bg-card p-3 ${done ? "opacity-60" : ""} ${overdue ? "border-destructive/50" : "border-border"}`}>
               <button className="mt-0.5 grid h-5 w-5 place-items-center rounded border border-border hover:bg-muted"
+                disabled={!canWrite}
                 onClick={() => updateMut.mutate({ id: t.Id, patch: { status: done ? "Açık" : "Tamamlandı" } })}>
                 {done && <Check className="h-3 w-3" />}
               </button>
@@ -140,8 +165,8 @@ function TasksPage() {
                 </div>
                 {t.description && <div className="mt-1 text-sm text-muted-foreground">{t.description}</div>}
               </div>
-              <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-              <Button variant="ghost" size="sm" onClick={() => { if (confirm("Sil?")) deleteMut.mutate(t.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+              {canWrite && <Button variant="ghost" size="sm" onClick={() => { setEditing(t); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+              {canDelete && <Button variant="ghost" size="sm" onClick={() => { if (confirm("Sil?")) deleteMut.mutate(t.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
             </div>
           );
         })}

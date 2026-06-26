@@ -14,6 +14,10 @@ import {
   listInvoices, getInvoice, saveInvoice, deleteInvoice, payInvoice, listAccounts,
 } from "@/lib/nocodb.functions";
 import { ReceiptText, Plus, Pencil, Trash2, Loader2, AlertCircle, BadgeDollarSign } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({ meta: [{ title: "Faturalar — IDM ERP" }] }),
@@ -44,13 +48,16 @@ function InvoicesPage() {
   const [payAccount, setPayAccount] = useState<number | null>(null);
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
 
+  const { canWrite, canDelete } = useMe();
   const saveMut = useMutation({
     mutationFn: (v: { id: number | null; data: DocData }) => save({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); crudToast(editing?.Id ? "update" : "create", "Fatura"); },
+    onError: (e) => errorToast(e),
   });
   const delMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["invoices"] }); crudToast("delete", "Fatura"); },
+    onError: (e) => errorToast(e),
   });
   const payMut = useMutation({
     mutationFn: (v: { invoice_id: number; account_id: number; date: string }) => pay({ data: v }),
@@ -59,8 +66,16 @@ function InvoicesPage() {
       qc.invalidateQueries({ queryKey: ["movements"] });
       qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
       setPaying(null);
+      crudToast("update", "Tahsilat");
     },
-    onError: (e) => alert("Hata: " + (e as Error).message),
+    onError: (e) => errorToast(e),
+  });
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "date", initialSortDir: "desc" });
+  const filtered = useFilteredList<Invoice>(data as Invoice[] | undefined, filters, {
+    searchKeys: ["number", "company_name"],
+    statusKey: "status",
+    dateKey: "date",
   });
 
   async function openEdit(id: number) {
@@ -84,9 +99,11 @@ function InvoicesPage() {
             <p className="text-sm text-muted-foreground">Fatura kayıtları, vade takibi</p>
           </div>
         </div>
+        {canWrite && (
         <Button onClick={() => { setEditing(null); setOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" /> Yeni Fatura
         </Button>
+        )}
       </div>
 
       {error && (
@@ -100,7 +117,30 @@ function InvoicesPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: no, firma…"
+        statusOptions={[
+          { value: "Taslak", label: "Taslak" },
+          { value: "Gönderildi", label: "Gönderildi" },
+          { value: "Ödendi", label: "Ödendi" },
+          { value: "Gecikti", label: "Gecikti" },
+          { value: "İptal", label: "İptal" },
+        ]}
+        showDates
+        sortOptions={[
+          { value: "date-desc", key: "date", dir: "desc", label: "Tarih (yeni)" },
+          { value: "date-asc", key: "date", dir: "asc", label: "Tarih (eski)" },
+          { value: "due_date-asc", key: "due_date", dir: "asc", label: "Vade (yakın)" },
+          { value: "total-desc", key: "total", dir: "desc", label: "Tutar (yüksek)" },
+          { value: "company_name-asc", key: "company_name", dir: "asc", label: "Firma (A→Z)" },
+        ]}
+        totalCount={(data as Invoice[] | undefined)?.length ?? 0}
+        filteredCount={filtered.length}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
@@ -117,10 +157,12 @@ function InvoicesPage() {
             {(isLoading || loadingEdit) && (
               <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
             )}
-            {!isLoading && data && data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">Henüz fatura yok.</td></tr>
+            {!isLoading && filtered.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                {((data as Invoice[] | undefined)?.length ?? 0) === 0 ? "Henüz fatura yok." : "Filtreyle eşleşen fatura yok."}
+              </td></tr>
             )}
-            {data?.map((q) => q as Invoice).map((q) => (
+            {filtered.map((q) => (
               <tr key={q.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 font-medium">{q.number || `#${q.Id}`}</td>
                 <td className="px-3 py-2">{q.company_name || "—"}</td>
@@ -135,7 +177,7 @@ function InvoicesPage() {
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums">{(q.total ?? 0).toLocaleString("tr-TR")} {q.currency || "TRY"}</td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
-                  {q.status !== "Ödendi" && q.status !== "İptal" && (
+                  {canWrite && q.status !== "Ödendi" && q.status !== "İptal" && (
                     <Button variant="ghost" size="sm" title="Ödendi olarak işaretle & kasaya işle"
                       onClick={() => {
                         setPaying(q);
@@ -145,14 +187,18 @@ function InvoicesPage() {
                       <BadgeDollarSign className="h-3.5 w-3.5 text-emerald-600" />
                     </Button>
                   )}
+                  {canWrite && (
                   <Button variant="ghost" size="sm" onClick={() => openEdit(q.Id)}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                  )}
+                  {canDelete && (
                   <Button variant="ghost" size="sm" onClick={() => {
                     if (confirm(`"${q.number || q.Id}" silinsin mi?`)) delMut.mutate(q.Id);
                   }}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
+                  )}
                 </td>
               </tr>
             ))}

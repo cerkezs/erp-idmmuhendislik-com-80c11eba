@@ -13,7 +13,11 @@ import {
 import {
   listFiles, createFile, updateFile, deleteFile, listCompanies,
 } from "@/lib/nocodb.functions";
-import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Search, Eye, Download } from "lucide-react";
+import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Eye, Download } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, applyListFilter } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/files")({
   head: () => ({ meta: [{ title: "Dosyalar — IDM ERP" }] }),
@@ -39,32 +43,36 @@ function FilesPage() {
   const { data, isLoading, error } = useQuery({ queryKey: ["files"], queryFn: () => list() });
   const { data: companies } = useQuery({ queryKey: ["companies"], queryFn: () => listCo() });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<FileRow, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["files"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["files"] }); crudToast("create", "Dosya"); },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<FileRow> }) => update({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["files"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["files"] }); crudToast("update", "Dosya"); },
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["files"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["files"] }); crudToast("delete", "Dosya"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<FileRow | null>(null);
   const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
   const [selectedCo, setSelectedCo] = useState<string>("all");
 
   const all = (data || []) as FileRow[];
+  const { filters, setFilters } = useListFilter({ initialSortKey: "name", initialSortDir: "asc" });
   const filtered = useMemo(() => {
-    return all.filter((f) => {
-      if (selectedCo !== "all" && (f.company_name || "—") !== selectedCo) return false;
-      if (q && !`${f.name} ${f.notes} ${f.folder}`.toLowerCase().includes(q.toLowerCase())) return false;
-      return true;
+    const base = selectedCo === "all" ? all : all.filter((f) => (f.company_name || "—") === selectedCo);
+    return applyListFilter(base, filters, {
+      searchKeys: ["name", "notes", "folder"],
+      categoryKey: "category",
     });
-  }, [all, q, selectedCo]);
+  }, [all, filters, selectedCo]);
 
   const byCompany = useMemo(() => {
     const counts = new Map<string, number>();
@@ -93,6 +101,7 @@ function FilesPage() {
             <p className="text-sm text-muted-foreground">{all.length} kayıt · {byCompany.length} klasör</p>
           </div>
         </div>
+        {canWrite && (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Yeni Dosya</Button></DialogTrigger>
           <FileForm initial={editing} companies={(companies as Array<{ Id: number; name: string }>) || []}
@@ -102,6 +111,7 @@ function FilesPage() {
               setOpen(false); setEditing(null);
             }} submitting={createMut.isPending || updateMut.isPending} />
         </Dialog>
+        )}
       </div>
 
       {error && (
@@ -132,9 +142,21 @@ function FilesPage() {
         </aside>
 
         <div>
-          <div className="mb-3 flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara: ad, klasör, not…" />
+          <div className="mb-3">
+            <ListToolbar
+              filters={filters}
+              setFilters={setFilters}
+              placeholder="Ara: ad, klasör, not…"
+              categoryOptions={CATS.map((c) => ({ value: c, label: c }))}
+              sortOptions={[
+                { value: "name-asc", key: "name", dir: "asc", label: "Ad (A→Z)" },
+                { value: "name-desc", key: "name", dir: "desc", label: "Ad (Z→A)" },
+                { value: "date-desc", key: "date", dir: "desc", label: "Yeni" },
+                { value: "date-asc", key: "date", dir: "asc", label: "Eski" },
+              ]}
+              totalCount={all.length}
+              filteredCount={filtered.length}
+            />
           </div>
           <div className="overflow-hidden rounded-lg border border-border bg-card">
             <table className="w-full text-sm">
@@ -173,8 +195,8 @@ function FilesPage() {
                           ? <a href={f.url} download={f.name || true} rel="noreferrer"><Download className="h-3.5 w-3.5" /></a>
                           : <Download className="h-3.5 w-3.5" />}
                       </Button>
-                      <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm("Kayıt silinsin mi? (Sunucudaki dosya silinmez)")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      {canWrite && <Button variant="ghost" size="sm" title="Düzenle" onClick={() => { setEditing(f); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+                      {canDelete && <Button variant="ghost" size="sm" title="Sil" onClick={() => { if (confirm("Kayıt silinsin mi? (Sunucudaki dosya silinmez)")) deleteMut.mutate(f.Id); }}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
                     </td>
                   </tr>
                 ))}

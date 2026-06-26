@@ -17,6 +17,10 @@ import {
   listProducts, createProduct, updateProduct, deleteProduct,
 } from "@/lib/nocodb.functions";
 import { Package, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 const currencySymbol: Record<string, string> = {
   TRY: "₺",
@@ -47,21 +51,31 @@ function ProductsPage() {
     queryFn: () => list(),
   });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<Product, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); crudToast("create", "Ürün"); },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Product> }) => update({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); crudToast("update", "Ürün"); },
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); crudToast("delete", "Ürün"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "name", initialSortDir: "asc" });
+  const filtered = useFilteredList<Product>(data as Product[] | undefined, filters, {
+    searchKeys: ["name", "code", "notes"],
+    statusKey: "currency",
+  });
 
   return (
     <AppShell>
@@ -75,6 +89,7 @@ function ProductsPage() {
             <p className="text-sm text-muted-foreground">Ürün kartları ve stok</p>
           </div>
         </div>
+        {canWrite && (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Yeni Ürün</Button>
@@ -89,6 +104,7 @@ function ProductsPage() {
             submitting={createMut.isPending || updateMut.isPending}
           />
         </Dialog>
+        )}
       </div>
 
       {error && (
@@ -104,7 +120,28 @@ function ProductsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: kod, ad, not…"
+        statusOptions={[
+          { value: "TRY", label: "₺ TRY" },
+          { value: "USD", label: "$ USD" },
+          { value: "EUR", label: "€ EUR" },
+        ]}
+        sortOptions={[
+          { value: "name-asc", key: "name", dir: "asc", label: "Ad (A→Z)" },
+          { value: "name-desc", key: "name", dir: "desc", label: "Ad (Z→A)" },
+          { value: "price-desc", key: "price", dir: "desc", label: "Fiyat (yüksek)" },
+          { value: "price-asc", key: "price", dir: "asc", label: "Fiyat (düşük)" },
+          { value: "stock-asc", key: "stock", dir: "asc", label: "Stok (az)" },
+          { value: "stock-desc", key: "stock", dir: "desc", label: "Stok (çok)" },
+        ]}
+        totalCount={(data as Product[] | undefined)?.length ?? 0}
+        filteredCount={filtered.length}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
@@ -121,10 +158,12 @@ function ProductsPage() {
             {isLoading && (
               <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
             )}
-            {!isLoading && data && data.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">Henüz ürün yok.</td></tr>
+            {!isLoading && filtered.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                {((data as Product[] | undefined)?.length ?? 0) === 0 ? "Henüz ürün yok." : "Filtreyle eşleşen ürün yok."}
+              </td></tr>
             )}
-            {data?.map((p) => p as Product).map((p) => (
+            {filtered.map((p) => (
               <tr key={p.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 text-muted-foreground">{p.code || "—"}</td>
                 <td className="px-3 py-2 font-medium">{p.name || "—"}</td>
@@ -133,14 +172,18 @@ function ProductsPage() {
                 <td className="px-3 py-2 text-right">{p.stock ?? 0}</td>
                 <td className="px-3 py-2 text-muted-foreground">{p.unit || "—"}</td>
                 <td className="px-3 py-2 text-right">
+                  {canWrite && (
                   <Button variant="ghost" size="sm" onClick={() => { setEditing(p); setOpen(true); }}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                  )}
+                  {canDelete && (
                   <Button variant="ghost" size="sm" onClick={() => {
                     if (confirm(`"${p.name}" silinsin mi?`)) deleteMut.mutate(p.Id);
                   }}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
+                  )}
                 </td>
               </tr>
             ))}

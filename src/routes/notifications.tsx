@@ -14,6 +14,10 @@ import {
   listNotifications, createNotification, markNotificationRead, deleteNotification,
 } from "@/lib/nocodb.functions";
 import { Bell, Plus, Trash2, Loader2, AlertCircle, Check, CheckCheck } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/notifications")({
   head: () => ({ meta: [{ title: "Bildirimler — IDM ERP" }] }),
@@ -44,22 +48,33 @@ function NotificationsPage() {
     queryFn: () => list(),
   });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<Notification, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); crudToast("create", "Bildirim"); },
+    onError: (e) => errorToast(e),
   });
   const markMut = useMutation({
     mutationFn: (v: { id: number; read: boolean }) => mark({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); crudToast("delete", "Bildirim"); },
+    onError: (e) => errorToast(e),
   });
 
   const [open, setOpen] = useState(false);
-  const rows = ((data || []) as Notification[]).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  const unread = rows.filter((r) => !r.read).length;
+  const all = (data || []) as Notification[];
+  const unread = all.filter((r) => !r.read).length;
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "date", initialSortDir: "desc" });
+  const rows = useFilteredList<Notification>(all, filters, {
+    searchKeys: ["title", "message", "user"],
+    statusKey: "type",
+    dateKey: "date",
+  });
 
   return (
     <AppShell>
@@ -78,11 +93,12 @@ function NotificationsPage() {
         <div className="flex gap-2">
           {unread > 0 && (
             <Button variant="outline" onClick={() => {
-              rows.filter((r) => !r.read).forEach((r) => markMut.mutate({ id: r.Id, read: true }));
+              all.filter((r) => !r.read).forEach((r) => markMut.mutate({ id: r.Id, read: true }));
             }}>
               <CheckCheck className="mr-2 h-4 w-4" /> Tümünü okundu yap
             </Button>
           )}
+          {canWrite && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Yeni Bildirim</Button>
@@ -92,8 +108,24 @@ function NotificationsPage() {
               submitting={createMut.isPending}
             />
           </Dialog>
+          )}
         </div>
       </div>
+
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: başlık, mesaj…"
+        statusOptions={TYPES.map((t) => ({ value: t.value, label: t.label }))}
+        showDates
+        sortOptions={[
+          { value: "date-desc", key: "date", dir: "desc", label: "Yeni" },
+          { value: "date-asc", key: "date", dir: "asc", label: "Eski" },
+          { value: "title-asc", key: "title", dir: "asc", label: "Başlık (A→Z)" },
+        ]}
+        totalCount={all.length}
+        filteredCount={rows.length}
+      />
 
       {error && (
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm">
@@ -114,7 +146,7 @@ function NotificationsPage() {
         )}
         {!isLoading && rows.length === 0 && (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Henüz bildirim yok.
+            {all.length === 0 ? "Henüz bildirim yok." : "Filtreyle eşleşen bildirim yok."}
           </div>
         )}
         {rows.map((n) => {
@@ -143,11 +175,13 @@ function NotificationsPage() {
                     <Check className="h-3.5 w-3.5" />
                   </Button>
                 )}
+                {canDelete && (
                 <Button variant="ghost" size="sm" onClick={() => {
                   if (confirm("Bildirim silinsin mi?")) deleteMut.mutate(n.Id);
                 }}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
+                )}
               </div>
             </div>
           );

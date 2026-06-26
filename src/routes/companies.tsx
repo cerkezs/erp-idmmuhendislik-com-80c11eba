@@ -29,6 +29,10 @@ import {
   deleteCompany,
 } from "@/lib/nocodb.functions";
 import { Building2, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/companies")({
   head: () => ({ meta: [{ title: "Firmalar — IDM ERP" }] }),
@@ -59,22 +63,33 @@ function CompaniesPage() {
     queryFn: () => list(),
   });
 
+  const { canWrite, canDelete } = useMe();
+
   const createMut = useMutation({
     mutationFn: (d: Omit<Company, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["companies"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["companies"] }); crudToast("create", "Firma"); },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Company> }) =>
       update({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["companies"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["companies"] }); crudToast("update", "Firma"); },
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["companies"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["companies"] }); crudToast("delete", "Firma"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<Company | null>(null);
   const [open, setOpen] = useState(false);
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "name", initialSortDir: "asc" });
+  const filtered = useFilteredList<Company>(data as Company[] | undefined, filters, {
+    searchKeys: ["name", "tax_no", "phone", "email"],
+    statusKey: "type",
+  });
 
   return (
     <AppShell>
@@ -90,6 +105,7 @@ function CompaniesPage() {
             </p>
           </div>
         </div>
+        {canWrite && (
         <Dialog
           open={open}
           onOpenChange={(o) => {
@@ -116,6 +132,7 @@ function CompaniesPage() {
             submitting={createMut.isPending || updateMut.isPending}
           />
         </Dialog>
+        )}
       </div>
 
       {error && (
@@ -137,7 +154,26 @@ function CompaniesPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: ad, vergi no, telefon, e-posta…"
+        statusOptions={[
+          { value: "Müşteri", label: "Müşteri" },
+          { value: "Tedarikçi", label: "Tedarikçi" },
+          { value: "Her İkisi", label: "Her İkisi" },
+        ]}
+        sortOptions={[
+          { value: "name-asc", key: "name", dir: "asc", label: "Ad (A→Z)" },
+          { value: "name-desc", key: "name", dir: "desc", label: "Ad (Z→A)" },
+          { value: "Id-desc", key: "Id", dir: "desc", label: "Yeni eklenen" },
+          { value: "Id-asc", key: "Id", dir: "asc", label: "Önce eski" },
+        ]}
+        totalCount={data?.length ?? 0}
+        filteredCount={filtered.length}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
@@ -157,14 +193,14 @@ function CompaniesPage() {
                 </td>
               </tr>
             )}
-            {!isLoading && data && data.length === 0 && (
+            {!isLoading && filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
-                  Henüz firma yok. Sağ üstten "Yeni Firma" ekleyin.
+                  {(data?.length ?? 0) === 0 ? "Henüz firma yok. Sağ üstten \"Yeni Firma\" ekleyin." : "Filtreyle eşleşen firma yok."}
                 </td>
               </tr>
             )}
-            {data?.map((c) => c as Company).map((c: Company) => (
+            {filtered.map((c) => (
               <tr key={c.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 font-medium">{c.name || "—"}</td>
                 <td className="px-3 py-2">
@@ -176,6 +212,7 @@ function CompaniesPage() {
                 <td className="px-3 py-2 text-muted-foreground">{c.phone || "—"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{c.email || "—"}</td>
                 <td className="px-3 py-2 text-right">
+                  {canWrite && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -186,6 +223,8 @@ function CompaniesPage() {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                  )}
+                  {canDelete && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -197,6 +236,7 @@ function CompaniesPage() {
                   >
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
+                  )}
                 </td>
               </tr>
             ))}

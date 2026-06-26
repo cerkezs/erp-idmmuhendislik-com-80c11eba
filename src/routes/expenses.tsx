@@ -14,6 +14,10 @@ import {
   listExpenses, createExpenseWithCash, updateExpense, deleteExpense, listAccounts,
 } from "@/lib/nocodb.functions";
 import { Receipt, Plus, Pencil, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({ meta: [{ title: "Giderler — IDM ERP" }] }),
@@ -43,21 +47,26 @@ function ExpensesPage() {
   });
   const accountsQ = useQuery({ queryKey: ["accounts"], queryFn: () => accountsFn() });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (v: { expense: Omit<Expense, "Id">; account_id: number | null }) => create({ data: v }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["expenses"] });
       qc.invalidateQueries({ queryKey: ["movements"] });
       qc.invalidateQueries({ queryKey: ["dashboard-summary"] });
+      crudToast("create", "Gider");
     },
+    onError: (e) => errorToast(e),
   });
   const updateMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Expense> }) => update({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["expenses"] }); crudToast("update", "Gider"); },
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["expenses"] }); crudToast("delete", "Gider"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editing, setEditing] = useState<Expense | null>(null);
@@ -65,6 +74,13 @@ function ExpensesPage() {
 
   const rows = (data || []) as Expense[];
   const totalTRY = rows.reduce((s, r) => s + (r.amount || 0) * (r.fx_rate || 1), 0);
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "date", initialSortDir: "desc" });
+  const filtered = useFilteredList<Expense>(rows, filters, {
+    searchKeys: ["description", "company_name", "receipt_no", "notes"],
+    categoryKey: "category",
+    dateKey: "date",
+  });
 
   return (
     <AppShell>
@@ -80,6 +96,7 @@ function ExpensesPage() {
             </p>
           </div>
         </div>
+        {canWrite && (
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(null); }}>
           <DialogTrigger asChild>
             <Button><Plus className="mr-2 h-4 w-4" /> Yeni Gider</Button>
@@ -95,6 +112,7 @@ function ExpensesPage() {
             submitting={createMut.isPending || updateMut.isPending}
           />
         </Dialog>
+        )}
       </div>
 
       {error && (
@@ -110,7 +128,24 @@ function ExpensesPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: açıklama, firma, fiş no…"
+        categoryOptions={CATEGORIES.map((c) => ({ value: c, label: c }))}
+        showDates
+        sortOptions={[
+          { value: "date-desc", key: "date", dir: "desc", label: "Tarih (yeni)" },
+          { value: "date-asc", key: "date", dir: "asc", label: "Tarih (eski)" },
+          { value: "amount-desc", key: "amount", dir: "desc", label: "Tutar (yüksek)" },
+          { value: "amount-asc", key: "amount", dir: "asc", label: "Tutar (düşük)" },
+        ]}
+        totalCount={rows.length}
+        filteredCount={filtered.length}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
@@ -127,10 +162,12 @@ function ExpensesPage() {
             {isLoading && (
               <tr><td colSpan={7} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
             )}
-            {!isLoading && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">Henüz gider yok.</td></tr>
+            {!isLoading && filtered.length === 0 && (
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-muted-foreground">
+                {rows.length === 0 ? "Henüz gider yok." : "Filtreyle eşleşen gider yok."}
+              </td></tr>
             )}
-            {rows.map((e) => (
+            {filtered.map((e) => (
               <tr key={e.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 text-muted-foreground">{e.date || "—"}</td>
                 <td className="px-3 py-2">{e.category || "—"}</td>
@@ -139,14 +176,18 @@ function ExpensesPage() {
                 <td className="px-3 py-2 text-right font-medium">{(e.amount ?? 0).toLocaleString("tr-TR")} {e.currency || "TRY"}</td>
                 <td className="px-3 py-2 text-muted-foreground">{e.receipt_no || "—"}</td>
                 <td className="px-3 py-2 text-right">
+                  {canWrite && (
                   <Button variant="ghost" size="sm" onClick={() => { setEditing(e); setOpen(true); }}>
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
+                  )}
+                  {canDelete && (
                   <Button variant="ghost" size="sm" onClick={() => {
                     if (confirm(`Gider silinsin mi?`)) deleteMut.mutate(e.Id);
                   }}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
+                  )}
                 </td>
               </tr>
             ))}
