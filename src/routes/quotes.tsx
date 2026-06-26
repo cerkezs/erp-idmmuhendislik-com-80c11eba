@@ -8,7 +8,7 @@ import { DocumentForm, type DocData } from "@/components/document-form";
 import {
   listQuotes, getQuote, saveQuote, deleteQuote, convertQuoteToInvoice,
 } from "@/lib/nocodb.functions";
-import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowRightCircle } from "lucide-react";
+import { FileText, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowRightCircle, Printer } from "lucide-react";
 import { ListToolbar } from "@/components/list-toolbar";
 import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
 import { useMe } from "@/hooks/use-me";
