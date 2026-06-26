@@ -78,11 +78,13 @@ export const getServerHealth = createServerFn({ method: "GET" }).handler(async (
   if (healthUrl) {
     try {
       const r = await fetch(healthUrl, {
-        headers: healthToken ? { "X-Token": healthToken } : {},
+        headers: healthToken ? { Authorization: `Bearer ${healthToken}` } : {},
         signal: AbortSignal.timeout(5000),
       });
-      if (r.ok) healthData = await r.text();
-      else healthError = `HTTP ${r.status}`;
+      if (r.ok) {
+        const txt = await r.text();
+        try { healthData = JSON.stringify(JSON.parse(txt), null, 2); } catch { healthData = txt; }
+      } else healthError = `HTTP ${r.status}`;
     } catch (e) {
       healthError = (e as Error).message;
     }
