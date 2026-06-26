@@ -60,11 +60,13 @@ function csvEscape(v: unknown): string {
 }
 
 function toCsv(rows: Array<Record<string, unknown>>): string {
-  if (!rows.length) return "\ufeff"; // BOM only
+  // Excel TR uyumu: sep=; ipucu + BOM, ayırıcı ;
+  const header = "sep=;\n\ufeff";
+  if (!rows.length) return header;
   const cols = Array.from(rows.reduce((s, r) => { Object.keys(r).forEach((k) => s.add(k)); return s; }, new Set<string>()));
-  const lines = [cols.join(",")];
-  for (const r of rows) lines.push(cols.map((c) => csvEscape(r[c])).join(","));
-  return "\ufeff" + lines.join("\n");
+  const lines = [cols.join(";")];
+  for (const r of rows) lines.push(cols.map((c) => csvEscape(r[c])).join(";"));
+  return header + lines.join("\r\n");
 }
 
 function slug(s: string): string {
