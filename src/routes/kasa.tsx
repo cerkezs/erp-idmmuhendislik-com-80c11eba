@@ -15,6 +15,10 @@ import {
   listMovements, createMovement, deleteMovement,
 } from "@/lib/nocodb.functions";
 import { Wallet, Plus, Pencil, Trash2, Loader2, AlertCircle, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilter, useFilteredList } from "@/hooks/use-list-filter";
+import { useMe } from "@/hooks/use-me";
+import { crudToast, errorToast } from "@/lib/toast";
 
 export const Route = createFileRoute("/kasa")({
   head: () => ({ meta: [{ title: "Kasa — IDM ERP" }] }),
@@ -47,30 +51,43 @@ function KasaPage() {
   const accounts = (accountsQ.data || []) as Account[];
   const movements = (movementsQ.data || []) as Movement[];
 
+  const { canWrite, canDelete } = useMe();
   const createAMut = useMutation({
     mutationFn: (d: Omit<Account, "Id">) => createA({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounts"] }); crudToast("create", "Kasa"); },
+    onError: (e) => errorToast(e),
   });
   const updateAMut = useMutation({
     mutationFn: (v: { id: number; patch: Partial<Account> }) => updateA({ data: v }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounts"] }); crudToast("update", "Kasa"); },
+    onError: (e) => errorToast(e),
   });
   const deleteAMut = useMutation({
     mutationFn: (id: number) => removeA({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["accounts"] }); crudToast("delete", "Kasa"); },
+    onError: (e) => errorToast(e),
   });
   const createMMut = useMutation({
     mutationFn: (d: Omit<Movement, "Id">) => createM({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["movements"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["movements"] }); crudToast("create", "Hareket"); },
+    onError: (e) => errorToast(e),
   });
   const deleteMMut = useMutation({
     mutationFn: (id: number) => removeM({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["movements"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["movements"] }); crudToast("delete", "Hareket"); },
+    onError: (e) => errorToast(e),
   });
 
   const [editingA, setEditingA] = useState<Account | null>(null);
   const [openA, setOpenA] = useState(false);
   const [openM, setOpenM] = useState(false);
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "date", initialSortDir: "desc" });
+  const filteredM = useFilteredList<Movement>(movements, filters, {
+    searchKeys: ["description", "account_name", "reference"],
+    statusKey: "type",
+    dateKey: "date",
+  });
 
   function balanceFor(acc: Account): number {
     const sign = (t?: string) => t === "Gider" ? -1 : 1;
@@ -93,6 +110,7 @@ function KasaPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          {canWrite && (
           <Dialog open={openM} onOpenChange={setOpenM}>
             <DialogTrigger asChild>
               <Button variant="outline" disabled={accounts.length === 0}>
@@ -105,6 +123,8 @@ function KasaPage() {
               submitting={createMMut.isPending}
             />
           </Dialog>
+          )}
+          {canWrite && (
           <Dialog open={openA} onOpenChange={(o) => { setOpenA(o); if (!o) setEditingA(null); }}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Yeni Kasa</Button>
@@ -119,6 +139,7 @@ function KasaPage() {
               submitting={createAMut.isPending || updateAMut.isPending}
             />
           </Dialog>
+          )}
         </div>
       </div>
 
@@ -147,14 +168,18 @@ function KasaPage() {
                 <div className="text-base font-semibold">{a.name}</div>
               </div>
               <div className="flex gap-1">
+                {canWrite && (
                 <Button variant="ghost" size="sm" onClick={() => { setEditingA(a); setOpenA(true); }}>
                   <Pencil className="h-3.5 w-3.5" />
                 </Button>
+                )}
+                {canDelete && (
                 <Button variant="ghost" size="sm" onClick={() => {
                   if (confirm(`"${a.name}" silinsin mi?`)) deleteAMut.mutate(a.Id);
                 }}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
+                )}
               </div>
             </div>
             <div className="mt-3 text-2xl font-semibold tabular-nums">
@@ -170,8 +195,26 @@ function KasaPage() {
         )}
       </div>
 
-      <h2 className="mb-2 text-sm font-medium text-muted-foreground">Son Hareketler</h2>
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
+      <h2 className="mb-2 text-sm font-medium text-muted-foreground">Hareketler</h2>
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: açıklama, kasa, referans…"
+        statusOptions={[
+          { value: "Gelir", label: "Gelir" },
+          { value: "Gider", label: "Gider" },
+        ]}
+        showDates
+        sortOptions={[
+          { value: "date-desc", key: "date", dir: "desc", label: "Tarih (yeni)" },
+          { value: "date-asc", key: "date", dir: "asc", label: "Tarih (eski)" },
+          { value: "amount-desc", key: "amount", dir: "desc", label: "Tutar (yüksek)" },
+          { value: "amount-asc", key: "amount", dir: "asc", label: "Tutar (düşük)" },
+        ]}
+        totalCount={movements.length}
+        filteredCount={filteredM.length}
+      />
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
             <tr>
@@ -187,10 +230,12 @@ function KasaPage() {
             {movementsQ.isLoading && (
               <tr><td colSpan={6} className="px-3 py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></td></tr>
             )}
-            {!movementsQ.isLoading && movements.length === 0 && (
-              <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">Henüz hareket yok.</td></tr>
+            {!movementsQ.isLoading && filteredM.length === 0 && (
+              <tr><td colSpan={6} className="px-3 py-10 text-center text-muted-foreground">
+                {movements.length === 0 ? "Henüz hareket yok." : "Filtreyle eşleşen hareket yok."}
+              </td></tr>
             )}
-            {movements.slice().sort((a, b) => (b.date || "").localeCompare(a.date || "")).map((m) => (
+            {filteredM.map((m) => (
               <tr key={m.Id} className="border-t border-border hover:bg-muted/20">
                 <td className="px-3 py-2 text-muted-foreground">{m.date || "—"}</td>
                 <td className="px-3 py-2">{m.account_name || "—"}</td>
@@ -206,11 +251,13 @@ function KasaPage() {
                   {m.type === "Gider" ? "−" : "+"}{(m.amount ?? 0).toLocaleString("tr-TR")} {m.currency || "TRY"}
                 </td>
                 <td className="px-3 py-2 text-right">
+                  {canDelete && (
                   <Button variant="ghost" size="sm" onClick={() => {
                     if (confirm("Hareket silinsin mi?")) deleteMMut.mutate(m.Id);
                   }}>
                     <Trash2 className="h-3.5 w-3.5 text-destructive" />
                   </Button>
+                  )}
                 </td>
               </tr>
             ))}
