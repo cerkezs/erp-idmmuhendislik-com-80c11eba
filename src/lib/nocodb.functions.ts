@@ -1182,6 +1182,42 @@ export const deleteFile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.number() }).parse(d))
   .handler(async ({ data }) => deleteRecord("dosyalar", data.id));
 
+// Base64 dosya upload → NocoDB storage. Dönüş: { url, size, kind, name }
+export const uploadAttachment = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({
+      filename: z.string().min(1),
+      mime: z.string().optional().default("application/octet-stream"),
+      base64: z.string().min(1),
+      folder: z.string().optional().default("dosyalar"),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { url, token } = env();
+    const bin = Uint8Array.from(atob(data.base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bin], { type: data.mime });
+    const fd = new FormData();
+    fd.append("file", blob, data.filename);
+    const path = `noco/${data.folder || "dosyalar"}`;
+    const res = await fetch(`${url}/api/v2/storage/upload?path=${encodeURIComponent(path)}`, {
+      method: "POST",
+      headers: { "xc-token": token },
+      body: fd,
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`Upload ${res.status}: ${text.slice(0, 300)}`);
+    const arr = JSON.parse(text) as Array<{ url?: string; signedPath?: string; path?: string; size?: number; mimetype?: string; title?: string }>;
+    const first = arr?.[0];
+    if (!first) throw new Error("Upload boş yanıt");
+    const fileUrl = first.url
+      || (first.signedPath ? `${url}/${first.signedPath.replace(/^\//, "")}` : "")
+      || (first.path ? `${url}/${first.path.replace(/^\//, "")}` : "");
+    const sizeKb = first.size ? (first.size / 1024) : (bin.byteLength / 1024);
+    const sizeStr = sizeKb > 1024 ? `${(sizeKb / 1024).toFixed(2)} MB` : `${sizeKb.toFixed(1)} KB`;
+    const kind = (first.mimetype || data.mime).split("/").pop() || "";
+    return { url: fileUrl, size: sizeStr, kind, name: data.filename };
+  });
+
 // ---------- Mail Log ----------
 const MAIL_MAP = {
   date: "tarih",
