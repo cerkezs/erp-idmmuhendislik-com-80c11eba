@@ -146,7 +146,7 @@ function NotificationsPage() {
         )}
         {!isLoading && rows.length === 0 && (
           <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            Henüz bildirim yok.
+            {all.length === 0 ? "Henüz bildirim yok." : "Filtreyle eşleşen bildirim yok."}
           </div>
         )}
         {rows.map((n) => {
@@ -175,11 +175,13 @@ function NotificationsPage() {
                     <Check className="h-3.5 w-3.5" />
                   </Button>
                 )}
+                {canDelete && (
                 <Button variant="ghost" size="sm" onClick={() => {
                   if (confirm("Bildirim silinsin mi?")) deleteMut.mutate(n.Id);
                 }}>
                   <Trash2 className="h-3.5 w-3.5 text-destructive" />
                 </Button>
+                )}
               </div>
             </div>
           );
