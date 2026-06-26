@@ -170,6 +170,11 @@ function QuotesPage() {
                       <ArrowRightCircle className="h-3.5 w-3.5 text-emerald-600" />
                     </Button>
                   )}
+                  <Button variant="ghost" size="sm" asChild title="Yazdır">
+                    <a href={`/print/teklif/${q.Id}`} target="_blank" rel="noreferrer">
+                      <Printer className="h-3.5 w-3.5" />
+                    </a>
+                  </Button>
                   {canWrite && (
                   <Button variant="ghost" size="sm" onClick={() => openEdit(q.Id)}>
                     <Pencil className="h-3.5 w-3.5" />
