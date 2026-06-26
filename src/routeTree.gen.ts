@@ -35,6 +35,7 @@ import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
 import { Route as AuthSifreRouteImport } from './routes/auth_.sifre'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 import { Route as PrintKindIdRouteImport } from './routes/print.$kind.$id'
+import { Route as ApiPublicCronScanRouteImport } from './routes/api/public/cron-scan'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -166,6 +167,11 @@ const PrintKindIdRoute = PrintKindIdRouteImport.update({
   path: '/print/$kind/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCronScanRoute = ApiPublicCronScanRouteImport.update({
+  id: '/api/public/cron-scan',
+  path: '/api/public/cron-scan',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -193,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/settings/kur': typeof SettingsKurRoute
   '/settings/mail': typeof SettingsMailRoute
   '/settings/sunucu': typeof SettingsSunucuRoute
+  '/api/public/cron-scan': typeof ApiPublicCronScanRoute
   '/print/$kind/$id': typeof PrintKindIdRoute
 }
 export interface FileRoutesByTo {
@@ -221,6 +228,7 @@ export interface FileRoutesByTo {
   '/settings/kur': typeof SettingsKurRoute
   '/settings/mail': typeof SettingsMailRoute
   '/settings/sunucu': typeof SettingsSunucuRoute
+  '/api/public/cron-scan': typeof ApiPublicCronScanRoute
   '/print/$kind/$id': typeof PrintKindIdRoute
 }
 export interface FileRoutesById {
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/settings_/kur': typeof SettingsKurRoute
   '/settings_/mail': typeof SettingsMailRoute
   '/settings_/sunucu': typeof SettingsSunucuRoute
+  '/api/public/cron-scan': typeof ApiPublicCronScanRoute
   '/print/$kind/$id': typeof PrintKindIdRoute
 }
 export interface FileRouteTypes {
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/settings/kur'
     | '/settings/mail'
     | '/settings/sunucu'
+    | '/api/public/cron-scan'
     | '/print/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/settings/kur'
     | '/settings/mail'
     | '/settings/sunucu'
+    | '/api/public/cron-scan'
     | '/print/$kind/$id'
   id:
     | '__root__'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/settings_/kur'
     | '/settings_/mail'
     | '/settings_/sunucu'
+    | '/api/public/cron-scan'
     | '/print/$kind/$id'
   fileRoutesById: FileRoutesById
 }
@@ -365,6 +377,7 @@ export interface RootRouteChildren {
   SettingsKurRoute: typeof SettingsKurRoute
   SettingsMailRoute: typeof SettingsMailRoute
   SettingsSunucuRoute: typeof SettingsSunucuRoute
+  ApiPublicCronScanRoute: typeof ApiPublicCronScanRoute
   PrintKindIdRoute: typeof PrintKindIdRoute
 }
 
@@ -552,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrintKindIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron-scan': {
+      id: '/api/public/cron-scan'
+      path: '/api/public/cron-scan'
+      fullPath: '/api/public/cron-scan'
+      preLoaderRoute: typeof ApiPublicCronScanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -581,6 +601,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsKurRoute: SettingsKurRoute,
   SettingsMailRoute: SettingsMailRoute,
   SettingsSunucuRoute: SettingsSunucuRoute,
+  ApiPublicCronScanRoute: ApiPublicCronScanRoute,
   PrintKindIdRoute: PrintKindIdRoute,
 }
 export const routeTree = rootRouteImport
