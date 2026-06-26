@@ -48,22 +48,33 @@ function NotificationsPage() {
     queryFn: () => list(),
   });
 
+  const { canWrite, canDelete } = useMe();
   const createMut = useMutation({
     mutationFn: (d: Omit<Notification, "Id">) => create({ data: d }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); crudToast("create", "Bildirim"); },
+    onError: (e) => errorToast(e),
   });
   const markMut = useMutation({
     mutationFn: (v: { id: number; read: boolean }) => mark({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onError: (e) => errorToast(e),
   });
   const deleteMut = useMutation({
     mutationFn: (id: number) => remove({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["notifications"] }); crudToast("delete", "Bildirim"); },
+    onError: (e) => errorToast(e),
   });
 
   const [open, setOpen] = useState(false);
-  const rows = ((data || []) as Notification[]).slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  const unread = rows.filter((r) => !r.read).length;
+  const all = (data || []) as Notification[];
+  const unread = all.filter((r) => !r.read).length;
+
+  const { filters, setFilters } = useListFilter({ initialSortKey: "date", initialSortDir: "desc" });
+  const rows = useFilteredList<Notification>(all, filters, {
+    searchKeys: ["title", "message", "user"],
+    statusKey: "type",
+    dateKey: "date",
+  });
 
   return (
     <AppShell>
