@@ -11,9 +11,9 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  listFiles, createFile, updateFile, deleteFile, listCompanies,
+  listFiles, createFile, updateFile, deleteFile, listCompanies, uploadAttachment,
 } from "@/lib/nocodb.functions";
-import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Eye, Download } from "lucide-react";
+import { Files as FilesIcon, Plus, Pencil, Trash2, Loader2, AlertCircle, Folder, FileText, Eye, Download, Upload } from "lucide-react";
 import { ListToolbar } from "@/components/list-toolbar";
 import { useListFilter, applyListFilter } from "@/hooks/use-list-filter";
 import { useMe } from "@/hooks/use-me";
@@ -228,10 +228,48 @@ function FileForm({ initial, companies, onSubmit, submitting }: {
     notes: initial?.notes || "",
   });
   function set<K extends keyof typeof v>(k: K, val: (typeof v)[K]) { setV((p) => ({ ...p, [k]: val })); }
+  const upload = useServerFn(uploadAttachment);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  async function handleFile(file: File) {
+    setUploading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      const base64 = btoa(bin);
+      const out = await upload({ data: { filename: file.name, mime: file.type || "application/octet-stream", base64, folder: v.category || "dosyalar" } });
+      setV((p) => ({ ...p, name: p.name || out.name, url: out.url, size: out.size, kind: out.kind }));
+      crudToast("create", "Yüklendi");
+    } catch (e) { errorToast(e); }
+    finally { setUploading(false); }
+  }
+
   return (
     <DialogContent className="max-w-lg">
       <DialogHeader><DialogTitle>{initial ? "Dosya Düzenle" : "Yeni Dosya"}</DialogTitle></DialogHeader>
       <div className="grid gap-3">
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault(); setDragOver(false);
+            const f = e.dataTransfer.files?.[0]; if (f) handleFile(f);
+          }}
+          className={`rounded-md border-2 border-dashed p-4 text-center text-xs ${dragOver ? "border-primary bg-primary/5" : "border-border"}`}
+        >
+          <Upload className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
+          <div className="text-muted-foreground">Sürükle-bırak ya da seç</div>
+          <label className="mt-2 inline-block">
+            <input type="file" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+            <span className="inline-flex h-8 cursor-pointer items-center rounded-md border border-input bg-background px-3 text-xs hover:bg-accent">
+              {uploading ? <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Yükleniyor…</> : "Dosya seç"}
+            </span>
+          </label>
+          {v.url && <div className="mt-2 truncate text-[11px] text-emerald-600">✓ {v.size} · {v.kind}</div>}
+        </div>
         <div className="grid gap-1.5"><Label>Ad *</Label><Input value={v.name || ""} onChange={(e) => set("name", e.target.value)} placeholder="teklif-2026-001.pdf" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5"><Label>Kategori</Label>
