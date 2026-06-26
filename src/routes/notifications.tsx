@@ -93,11 +93,12 @@ function NotificationsPage() {
         <div className="flex gap-2">
           {unread > 0 && (
             <Button variant="outline" onClick={() => {
-              rows.filter((r) => !r.read).forEach((r) => markMut.mutate({ id: r.Id, read: true }));
+              all.filter((r) => !r.read).forEach((r) => markMut.mutate({ id: r.Id, read: true }));
             }}>
               <CheckCheck className="mr-2 h-4 w-4" /> Tümünü okundu yap
             </Button>
           )}
+          {canWrite && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button><Plus className="mr-2 h-4 w-4" /> Yeni Bildirim</Button>
@@ -107,8 +108,24 @@ function NotificationsPage() {
               submitting={createMut.isPending}
             />
           </Dialog>
+          )}
         </div>
       </div>
+
+      <ListToolbar
+        filters={filters}
+        setFilters={setFilters}
+        placeholder="Ara: başlık, mesaj…"
+        statusOptions={TYPES.map((t) => ({ value: t.value, label: t.label }))}
+        showDates
+        sortOptions={[
+          { value: "date-desc", key: "date", dir: "desc", label: "Yeni" },
+          { value: "date-asc", key: "date", dir: "asc", label: "Eski" },
+          { value: "title-asc", key: "title", dir: "asc", label: "Başlık (A→Z)" },
+        ]}
+        totalCount={all.length}
+        filteredCount={rows.length}
+      />
 
       {error && (
         <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm">
