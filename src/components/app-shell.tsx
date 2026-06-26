@@ -135,7 +135,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function TopBar({ onMenu, user }: { onMenu: () => void; user: { name: string; email: string; role: string; mustChangePassword?: boolean } }) {
+function TopBar({ onMenu, user, path }: { onMenu: () => void; user: { name: string; email: string; role: string; mustChangePassword?: boolean }; path: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const { data, isFetching, refetch } = useQuery({
