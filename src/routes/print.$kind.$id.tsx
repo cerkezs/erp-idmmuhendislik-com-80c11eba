@@ -60,7 +60,7 @@ function PrintPage() {
           <div className="text-xl font-semibold uppercase">
             {isQuote ? "Teklif" : "Fatura"}
           </div>
-          <div className="mt-1 text-sm">No: {(d.number as string) || d.Id}</div>
+          <div className="mt-1 text-sm">No: {(d.number as string) || String(d.Id ?? "")}</div>
           <div className="text-xs text-black/60">Tarih: {(d.date as string) || "—"}</div>
           {!isQuote && (
             <div className="text-xs text-black/60">

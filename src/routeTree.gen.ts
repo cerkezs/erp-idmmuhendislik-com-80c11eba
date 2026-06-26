@@ -34,6 +34,7 @@ import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bild
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
 import { Route as AuthSifreRouteImport } from './routes/auth_.sifre'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
+import { Route as PrintKindIdRouteImport } from './routes/print.$kind.$id'
 
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
@@ -160,6 +161,11 @@ const ApiBackupRoute = ApiBackupRouteImport.update({
   path: '/api/backup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrintKindIdRoute = PrintKindIdRouteImport.update({
+  id: '/print/$kind/$id',
+  path: '/print/$kind/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/settings/kur': typeof SettingsKurRoute
   '/settings/mail': typeof SettingsMailRoute
   '/settings/sunucu': typeof SettingsSunucuRoute
+  '/print/$kind/$id': typeof PrintKindIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/settings/kur': typeof SettingsKurRoute
   '/settings/mail': typeof SettingsMailRoute
   '/settings/sunucu': typeof SettingsSunucuRoute
+  '/print/$kind/$id': typeof PrintKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -242,6 +250,7 @@ export interface FileRoutesById {
   '/settings_/kur': typeof SettingsKurRoute
   '/settings_/mail': typeof SettingsMailRoute
   '/settings_/sunucu': typeof SettingsSunucuRoute
+  '/print/$kind/$id': typeof PrintKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/settings/kur'
     | '/settings/mail'
     | '/settings/sunucu'
+    | '/print/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/settings/kur'
     | '/settings/mail'
     | '/settings/sunucu'
+    | '/print/$kind/$id'
   id:
     | '__root__'
     | '/'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/settings_/kur'
     | '/settings_/mail'
     | '/settings_/sunucu'
+    | '/print/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -353,6 +365,7 @@ export interface RootRouteChildren {
   SettingsKurRoute: typeof SettingsKurRoute
   SettingsMailRoute: typeof SettingsMailRoute
   SettingsSunucuRoute: typeof SettingsSunucuRoute
+  PrintKindIdRoute: typeof PrintKindIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -532,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBackupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/print/$kind/$id': {
+      id: '/print/$kind/$id'
+      path: '/print/$kind/$id'
+      fullPath: '/print/$kind/$id'
+      preLoaderRoute: typeof PrintKindIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -561,6 +581,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsKurRoute: SettingsKurRoute,
   SettingsMailRoute: SettingsMailRoute,
   SettingsSunucuRoute: SettingsSunucuRoute,
+  PrintKindIdRoute: PrintKindIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
