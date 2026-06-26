@@ -73,7 +73,7 @@ export const getServerHealth = createServerFn({ method: "GET" }).handler(async (
     }
   }
 
-  let healthData: unknown = null;
+  let healthData: string | null = null;
   let healthError = "";
   if (healthUrl) {
     try {
@@ -83,7 +83,7 @@ export const getServerHealth = createServerFn({ method: "GET" }).handler(async (
       });
       if (r.ok) {
         const txt = await r.text();
-        try { healthData = JSON.parse(txt); } catch { healthData = txt; }
+        try { healthData = JSON.stringify(JSON.parse(txt), null, 2); } catch { healthData = txt; }
       } else healthError = `HTTP ${r.status}`;
     } catch (e) {
       healthError = (e as Error).message;
