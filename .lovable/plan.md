@@ -1,72 +1,58 @@
-## Repo artık Public — VPS kurulumuna geçiyoruz
+## Amaç
+`https://erp.idmmuhendislik.com` adresindeki canlı sistemi (VPS üzerindeki yeni kurulum) baştan sona kontrol edip Lovable yayınını kapatmadan önce eksik/bozuk bir şey kalıp kalmadığını doğrulamak.
 
-Repo: `https://github.com/cerkezs/erp-idmmuhendislik-com-80c11eba`
+## Kontrol Listesi
 
-### Adım 1 — VPS'te clone + build (sen çalıştıracaksın)
+### 1. Altyapı sağlığı
+- PM2 process durumu (`idm-erp` online mu, restart sayısı, memory)
+- `.env` tüm değişkenleri dolu mu (özellikle `MAIL_ENC_KEY`, `HEALTH_API_TOKEN`)
+- Nginx vhost doğru sertifika ile çalışıyor mu (zaten doğrulandı, tekrar bakılacak)
+- Cron job ekli mi (`crontab -l`)
+- Disk/RAM kullanımı
 
-```bash
-ssh root@104.247.163.120
+### 2. Uygulama fonksiyonları (Playwright ile canlı test)
+Admin olarak giriş yapıp her modülün **listelenme + 1 kayıt ekleme** akışını dener:
+- Dashboard (özet kartları, bildirim çanı)
+- Firmalar (CRUD)
+- Ürünler (CRUD, kur sembolleri)
+- Teklifler → Fatura dönüşümü
+- Faturalar
+- Üretim Emirleri (durum renklendirme, aktif/tamamlanan ayrımı, filtre)
+- Görevler
+- Kasa / Giderler
+- Dosyalar (firma ağacı otomatik)
+- Mail (Roundcube iframe)
+- Raporlar (CSV export, TCMB kuru)
+- Bildirimler
+- Ayarlar (Kategoriler, Kullanıcılar, Health, Yedek/ZIP)
+- Cron-scan endpoint manuel test (`curl` + Bearer token)
+- Health endpoint çalışıyor mu
 
-# Bun + PM2 kurulu değilse:
-curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc
-npm i -g pm2
+### 3. Entegrasyonlar
+- NocoDB bağlantısı (tüm tablolar oluşmuş mu — `/setup` 15 tablo)
+- TCMB kur servisi (gerçek değerler dönüyor mu)
+- Health API (VPS metrikleri)
+- Mail SMTP (test gönderim — opsiyonel)
+- Backup ZIP (`/api/backup` indirilebiliyor mu)
 
-# Kod
-mkdir -p /opt && cd /opt
-rm -rf idm-erp 2>/dev/null
-git clone https://github.com/cerkezs/erp-idmmuhendislik-com-80c11eba.git idm-erp
-cd /opt/idm-erp
-bun install
-bun run build
-```
+### 4. UI / UX
+- "Geri" butonu tüm alt sayfalarda görünüyor mu
+- Sembol gösterimi (₺ € $) doğru mu
+- Mobile responsive
+- Console error / network 4xx-5xx var mı
 
-Build başarılı olursa `.output/server/index.mjs` oluşacak.
+### 5. Güvenlik
+- Auth zorunluluğu (logout sonrası protected route'lar `/auth`'a redirect ediyor mu)
+- TOTP setup akışı (Ayarlar → Güvenlik)
+- Cron endpoint Bearer token olmadan reddediyor mu
 
-### Adım 2 — `.env` (ben üreteceğim, sen yapıştıracaksın)
+## Çıktı
+Her madde için **OK / Eksik / Bozuk** etiketi ve eksik olanların listesi. Sonunda iki seçenek:
+- Hepsi OK ise → Lovable unpublish + DNS doğrulama adımları
+- Eksik varsa → öncelik sırasına göre düzeltme planı (build mode'a geçince tek tek yapılır)
 
-`/opt/idm-erp/.env` içeriğini sana vereceğim:
-- `SESSION_SECRET` (64 hex — yeni üretirim)
-- `CRON_TOKEN` (yeni üretirim)
-- `NOCODB_URL`, `NOCODB_TOKEN` (mevcut)
-- `HEALTH_API_URL`, `HEALTH_API_TOKEN` (mevcut)
-- `PORT=3000`
-
-### Adım 3 — PM2 ile çalıştır
-
-```bash
-cd /opt/idm-erp
-pm2 start ".output/server/index.mjs" --name idm-erp --update-env
-pm2 save
-pm2 startup systemd -u root --hp /root   # çıkan komutu çalıştır
-```
-
-`curl http://127.0.0.1:3000` → HTML dönmeli.
-
-### Adım 4 — Nginx reverse proxy (`erp.idmmuhendislik.com` → 127.0.0.1:3000)
-
-Vhost dosyası + Certbot komutlarını vereceğim. Mevcut vhost varsa onu güncelleyeceğiz (duplicate listen olmasın).
-
-### Adım 5 — DNS cutover
-
-`erp.idmmuhendislik.com` A kaydı şu an Lovable IP'sinde. TürkTicaret panelinden **`104.247.163.120`** olarak güncelleyeceksin. 5–30 dk propagasyon. Bu adım **mesai sonrası** önerilir, çünkü bu süre içinde site açılmayabilir.
-
-### Adım 6 — Cron
-
-```bash
-crontab -e
-*/15 * * * * curl -s -H "x-cron-token: SENIN_CRON_TOKEN" https://erp.idmmuhendislik.com/api/public/cron-scan >/dev/null
-```
-
-### Adım 7 — Lovable yayınını kapat + rozet
-
-DNS cutover doğrulandıktan sonra Lovable Project Settings → Unpublish. Self-host'ta "Edit with Lovable" rozeti zaten görünmez.
-
-### Riskler
-
-- **Build hatası:** Cloudflare Worker → Node geçişinde bir pakette sorun çıkarsa düzelteceğim (yeni commit → VPS'te `git pull && bun install && bun run build && pm2 restart idm-erp`).
-- **DNS kesintisi:** Sadece cutover anında. App önce VPS'te 3000 portunda ayakta olmalı.
-
-### Onayın gereken tek şey
-
-**Adım 1'i çalıştırıp `bun run build` çıktısını yapıştır.** Hata olursa düzeltirim, olmazsa Adım 2'deki `.env`'i üretip veririm.
+## Yöntem
+Plan onaylandıktan sonra build mode'da:
+1. Sandbox'tan Playwright ile `https://erp.idmmuhendislik.com` üzerinde headless tarama
+2. Gerekli yerlerde sana ek VPS komutu (PM2/cron kontrolü) verilir
+3. Sonuçlar tablo halinde raporlanır
