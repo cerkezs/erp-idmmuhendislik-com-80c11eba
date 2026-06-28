@@ -1779,13 +1779,14 @@ export const dashboardSummary = createServerFn({ method: "GET" }).handler(async 
   const monthStart = today.slice(0, 7) + "-01";
 
   // paralel
-  const [accs, moves, invs, exps, prods, notifs] = await Promise.all([
+  const [accs, moves, invs, exps, prods, notifs, purs] = await Promise.all([
     listRecords("kasalar", 200).catch(() => [] as Record_[]),
     listRecords("kasa_hareketleri", 1000).catch(() => [] as Record_[]),
     listRecords("faturalar", 500).catch(() => [] as Record_[]),
     listRecords("giderler", 500).catch(() => [] as Record_[]),
     listRecords("uretim_emirleri", 500).catch(() => [] as Record_[]),
     listRecords("bildirimler", 100).catch(() => [] as Record_[]),
+    listRecords("alis_faturalari", 500).catch(() => [] as Record_[]),
   ]);
 
   // Kasa bakiyesi (TRY karşılığı)
