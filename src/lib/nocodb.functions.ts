@@ -815,8 +815,11 @@ export const saveInvoice = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { items, ...rest } = data.data;
     const t = computeTotals(items);
+    const rate = (rest.currency || "TRY") === "TRY" ? 1 : (rest.rate || 1);
+    const rate_source = (rest.currency || "TRY") === "TRY" ? "tl" : (rest.rate_source || "manuel");
+    const total_try = round2(t.total * rate);
     const header = toTr(
-      { ...rest, subtotal: t.subtotal, vat_total: t.vat_total, total: t.total },
+      { ...rest, rate, rate_source, subtotal: t.subtotal, vat_total: t.vat_total, total: t.total, total_try },
       FATURA_MAP,
     );
     const tableId = await getTableId("faturalar");
@@ -836,7 +839,24 @@ export const saveInvoice = createServerFn({ method: "POST" })
     }
     const kalemTable = await getTableId("fatura_kalemleri");
     await replaceItems(kalemTable, "fatura_id", parentId, items, FATURA_KALEM_MAP);
-    return { id: parentId, ...t };
+
+    // Cari hareket: satış faturası → firma bize borçlu (yön=borc)
+    if (rest.company_id) {
+      await upsertLedgerByRef({
+        ref_type: "fatura_satis",
+        ref_id: parentId,
+        company_id: rest.company_id,
+        company_name: rest.company_name || "",
+        date: rest.date || new Date().toISOString().slice(0, 10),
+        direction: "borc",
+        amount: t.total,
+        currency: rest.currency || "TRY",
+        rate,
+        amount_try: total_try,
+        description: `Satış faturası ${rest.number || `#${parentId}`}`,
+      });
+    }
+    return { id: parentId, total_try, ...t };
   });
 
 export const deleteInvoice = createServerFn({ method: "POST" })
