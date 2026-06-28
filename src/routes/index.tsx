@@ -49,12 +49,17 @@ function Dashboard() {
     { label: "Kasa Bakiyesi", value: s ? `${fmtTRY(s.kasaBakiye)} ₺` : "—",
       sub: s ? `${s.kasaCount} kasa toplam` : "", icon: Wallet, tone: "default" as const },
     { label: "Bekleyen Alacak", value: s ? `${fmtTRY(s.bekleyenAlacak)} ₺` : "—",
-      sub: s ? `${s.openInvoiceCount} fatura · ${s.vadesiGecmis} vadesi geçmiş` : "", icon: Clock,
-      tone: s && s.vadesiGecmis > 0 ? "warn" : "default" },
+      sub: s ? `${s.openInvoiceCount} fatura · ${s.vadesiGecmis} vadesi geçmiş` : "", icon: ReceiptText,
+      tone: s && s.vadesiGecmis > 0 ? ("warn" as const) : ("default" as const) },
+    { label: "Bekleyen Ödeme", value: s ? `${fmtTRY(s.bekleyenOdeme ?? 0)} ₺` : "—",
+      sub: s ? `${s.openPurchaseCount ?? 0} alış faturası · ${s.vadesiGecmisOdeme ?? 0} vadesi geçmiş` : "", icon: FileInput,
+      tone: s && (s.vadesiGecmisOdeme ?? 0) > 0 ? ("warn" as const) : ("default" as const) },
     { label: "Bu Ay Tahsilat", value: s ? `${fmtTRY(s.ayTahsilat)} ₺` : "—",
       sub: "Kasa girişleri", icon: TrendingUp, tone: "ok" as const },
     { label: "Bu Ay Gider", value: s ? `${fmtTRY(s.ayGider)} ₺` : "—",
       sub: "Kasa çıkışları + giderler", icon: TrendingDown, tone: "default" as const },
+    { label: "Aktif Üretim", value: s ? String(s.activeProductions) : "—",
+      sub: s ? `${s.totalProductions} toplam emir` : "", icon: Factory, tone: "default" as const },
   ];
 
   return (
