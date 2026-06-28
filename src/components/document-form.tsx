@@ -304,6 +304,8 @@ function freshDefaults(kind: "quote" | "invoice", initial: (DocData & { Id?: num
     date: initial?.date || today,
     status: initial?.status || "Taslak",
     currency: initial?.currency || "TRY",
+    rate: initial?.rate ?? ((initial?.currency || "TRY") === "TRY" ? 1 : undefined),
+    rate_source: initial?.rate_source ?? ((initial?.currency || "TRY") === "TRY" ? "tl" : "manuel"),
     notes: initial?.notes || "",
     items: (initial?.items || []).map((it) => ({
       product_id: it.product_id ?? null,
