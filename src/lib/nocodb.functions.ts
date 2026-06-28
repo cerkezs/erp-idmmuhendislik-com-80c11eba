@@ -845,6 +845,7 @@ export const saveInvoice = createServerFn({ method: "POST" })
       await upsertLedgerByRef({
         ref_type: "fatura_satis",
         ref_id: parentId,
+        type: "fatura_satis",
         company_id: rest.company_id,
         company_name: rest.company_name || "",
         date: rest.date || new Date().toISOString().slice(0, 10),
