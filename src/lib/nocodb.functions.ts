@@ -1814,12 +1814,29 @@ export const dashboardSummary = createServerFn({ method: "GET" }).handler(async 
     const r = i as Record<string, unknown>;
     const durum = (r.durum as string) || "Taslak";
     if (durum === "Ödendi" || durum === "İptal") continue;
-    const total = Number(r.genel_toplam) || 0;
+    const total = Number(r.tl_toplam) || Number(r.genel_toplam) || 0;
     bekleyenAlacak += total;
     const overdue = !!(r.vade_tarihi && (r.vade_tarihi as string) < today);
     if (overdue) vadesiGecmis += 1;
     openInvs.push({
       Id: r.Id as number, number: r.numara as string, company_name: r.firma_adi as string,
+      total, due_date: r.vade_tarihi as string, overdue,
+    });
+  }
+
+  // Bekleyen ödeme (alış faturaları)
+  let bekleyenOdeme = 0, vadesiGecmisOdeme = 0;
+  const openPurs: Array<{ Id: number; number?: string; supplier_name?: string; total: number; due_date?: string; overdue: boolean }> = [];
+  for (const p of purs) {
+    const r = p as Record<string, unknown>;
+    const durum = (r.durum as string) || "Bekliyor";
+    if (durum === "Ödendi" || durum === "İptal") continue;
+    const total = Number(r.tl_toplam) || Number(r.genel_toplam) || 0;
+    bekleyenOdeme += total;
+    const overdue = !!(r.vade_tarihi && (r.vade_tarihi as string) < today);
+    if (overdue) vadesiGecmisOdeme += 1;
+    openPurs.push({
+      Id: r.Id as number, number: r.numara as string, supplier_name: r.tedarikci_adi as string,
       total, due_date: r.vade_tarihi as string, overdue,
     });
   }
@@ -1830,7 +1847,7 @@ export const dashboardSummary = createServerFn({ method: "GET" }).handler(async 
     return d !== "Tamamlandı" && d !== "İptal";
   }).length;
 
-  // Son hareketler (son 8 bildirim)
+  // Son hareketler (son 10 bildirim)
   const recent = (notifs as Record_[])
     .slice(0, 10)
     .map((r) => ({
@@ -1843,10 +1860,12 @@ export const dashboardSummary = createServerFn({ method: "GET" }).handler(async 
   return {
     kasaBakiye, kasaCount: accs.length,
     bekleyenAlacak, vadesiGecmis, openInvoiceCount: openInvs.length,
+    bekleyenOdeme, vadesiGecmisOdeme, openPurchaseCount: openPurs.length,
     ayTahsilat, ayGider,
     activeProductions, totalProductions: prods.length,
     recent,
     openInvoices: openInvs.sort((a, b) => (a.due_date || "").localeCompare(b.due_date || "")).slice(0, 6),
+    openPurchases: openPurs.sort((a, b) => (a.due_date || "").localeCompare(b.due_date || "")).slice(0, 6),
   };
 });
 
