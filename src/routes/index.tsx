@@ -105,22 +105,49 @@ function Dashboard() {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {/* Bekleyen faturalar */}
-          <section className="rounded-lg border border-border bg-card p-4 shadow-sm lg:col-span-2">
+          {/* Bekleyen Alacaklar (satış faturaları) */}
+          <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Bekleyen Faturalar</h2>
+              <h2 className="text-sm font-semibold">Bekleyen Alacaklar</h2>
               <Link to="/invoices" className="text-[11px] text-muted-foreground hover:text-foreground">Tümü →</Link>
             </div>
             {!s ? (
               <div className="py-6 text-center text-xs text-muted-foreground">{isLoading ? "Yükleniyor…" : "—"}</div>
             ) : s.openInvoices.length === 0 ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">Bekleyen fatura yok 🎉</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">Bekleyen alacak yok 🎉</div>
             ) : (
               <ul className="divide-y divide-border text-sm">
                 {s.openInvoices.map((i) => (
                   <li key={i.Id} className="flex items-center justify-between py-2">
                     <div className="min-w-0">
                       <div className="truncate font-medium">{i.number || `#${i.Id}`} · {i.company_name || "—"}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Vade: {i.due_date || "—"} {i.overdue && <span className="ml-1 rounded bg-red-500/15 px-1 text-red-600">vadesi geçti</span>}
+                      </div>
+                    </div>
+                    <div className="text-right tabular-nums font-medium">{fmtTRY(i.total)} ₺</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Bekleyen Ödemeler (alış faturaları) */}
+          <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Bekleyen Ödemeler</h2>
+              <Link to="/alis-faturalari" className="text-[11px] text-muted-foreground hover:text-foreground">Tümü →</Link>
+            </div>
+            {!s ? (
+              <div className="py-6 text-center text-xs text-muted-foreground">{isLoading ? "Yükleniyor…" : "—"}</div>
+            ) : (s.openPurchases ?? []).length === 0 ? (
+              <div className="py-6 text-center text-xs text-muted-foreground">Bekleyen ödeme yok 🎉</div>
+            ) : (
+              <ul className="divide-y divide-border text-sm">
+                {(s.openPurchases ?? []).map((i) => (
+                  <li key={i.Id} className="flex items-center justify-between py-2">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{i.number || `#${i.Id}`} · {i.supplier_name || "—"}</div>
                       <div className="text-[11px] text-muted-foreground">
                         Vade: {i.due_date || "—"} {i.overdue && <span className="ml-1 rounded bg-red-500/15 px-1 text-red-600">vadesi geçti</span>}
                       </div>
