@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { listCompanies, listProducts } from "@/lib/nocodb.functions";
+import { getRateForDate } from "@/lib/rates.functions";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 
 export type DocItem = {
