@@ -271,6 +271,10 @@ export function DocumentForm({
                   <td className="px-2 py-1 text-right tabular-nums">{totals.vat.toLocaleString("tr-TR")}</td><td /></tr>
                 <tr><td colSpan={5} className="px-2 py-1 text-right font-semibold">Genel Toplam</td>
                   <td className="px-2 py-1 text-right font-semibold tabular-nums">{totals.total.toLocaleString("tr-TR")} {vals.currency}</td><td /></tr>
+                {vals.currency && vals.currency !== "TRY" && (vals.rate || 0) > 0 && (
+                  <tr><td colSpan={5} className="px-2 py-1 text-right text-xs text-muted-foreground">TL Karşılığı (kur {vals.rate})</td>
+                    <td className="px-2 py-1 text-right text-xs tabular-nums">{round2(totals.total * (vals.rate || 0)).toLocaleString("tr-TR")} ₺</td><td /></tr>
+                )}
               </tfoot>
             </table>
           </div>
