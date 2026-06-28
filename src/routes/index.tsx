@@ -7,7 +7,7 @@ import { MODULES } from "@/lib/modules";
 import { dashboardSummary, runNotificationTriggers } from "@/lib/nocodb.functions";
 import {
   TrendingUp, TrendingDown, AlertCircle, CheckCircle2,
-  Wallet, ReceiptText, Clock, Factory, Info, Loader2,
+  Wallet, ReceiptText, Clock, Factory, Info, Loader2, FileInput,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
