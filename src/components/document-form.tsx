@@ -158,15 +158,34 @@ export function DocumentForm({
             </div>
             <div className="grid gap-1.5">
               <Label>Döviz</Label>
-              <Select value={vals.currency || "TRY"} onValueChange={(v) => set("currency", v)}>
+              <Select value={vals.currency || "TRY"} onValueChange={(v) => {
+                setVals((p) => ({ ...p, currency: v, rate: v === "TRY" ? 1 : p.rate, rate_source: v === "TRY" ? "tl" : p.rate_source }));
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TRY">TRY (₺)</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="TRY">₺ TRY</SelectItem>
+                  <SelectItem value="USD">$ USD</SelectItem>
+                  <SelectItem value="EUR">€ EUR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {vals.currency && vals.currency !== "TRY" && (
+              <div className="grid gap-1.5">
+                <Label>Kur (1 {vals.currency} = ? ₺)</Label>
+                <div className="flex gap-1">
+                  <Input
+                    type="number" step="0.0001" className="h-9"
+                    value={vals.rate ?? ""}
+                    onChange={(e) => setVals((p) => ({ ...p, rate: parseFloat(e.target.value) || 0, rate_source: "manuel" }))}
+                    placeholder="örn 34.20"
+                  />
+                  <Button type="button" size="sm" variant="outline" onClick={autoFetchRate} disabled={rateLoading} title="TCMB'den o günkü kuru çek">
+                    {rateLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "TCMB"}
+                  </Button>
+                </div>
+                <div className="text-[10px] text-muted-foreground">Kaynak: {vals.rate_source || "—"}</div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-border">
