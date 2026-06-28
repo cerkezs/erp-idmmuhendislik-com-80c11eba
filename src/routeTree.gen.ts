@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TedarikcilerRouteImport } from './routes/tedarikciler'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -16,6 +17,7 @@ import { Route as QuotesRouteImport } from './routes/quotes'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ProductionsRouteImport } from './routes/productions'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MusterilerRouteImport } from './routes/musteriler'
 import { Route as MailRouteImport } from './routes/mail'
 import { Route as KasaRouteImport } from './routes/kasa'
 import { Route as InvoicesRouteImport } from './routes/invoices'
@@ -37,6 +39,11 @@ import { Route as ApiBackupRouteImport } from './routes/api/backup'
 import { Route as PrintKindIdRouteImport } from './routes/print.$kind.$id'
 import { Route as ApiPublicCronScanRouteImport } from './routes/api/public/cron-scan'
 
+const TedarikcilerRoute = TedarikcilerRouteImport.update({
+  id: '/tedarikciler',
+  path: '/tedarikciler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -70,6 +77,11 @@ const ProductionsRoute = ProductionsRouteImport.update({
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MusterilerRoute = MusterilerRouteImport.update({
+  id: '/musteriler',
+  path: '/musteriler',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MailRoute = MailRouteImport.update({
@@ -183,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof InvoicesRoute
   '/kasa': typeof KasaRoute
   '/mail': typeof MailRoute
+  '/musteriler': typeof MusterilerRoute
   '/notifications': typeof NotificationsRoute
   '/productions': typeof ProductionsRoute
   '/products': typeof ProductsRoute
@@ -190,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/tedarikciler': typeof TedarikcilerRoute
   '/api/backup': typeof ApiBackupRoute
   '/auth/sifre': typeof AuthSifreRoute
   '/settings/backup': typeof SettingsBackupRoute
@@ -212,6 +226,7 @@ export interface FileRoutesByTo {
   '/invoices': typeof InvoicesRoute
   '/kasa': typeof KasaRoute
   '/mail': typeof MailRoute
+  '/musteriler': typeof MusterilerRoute
   '/notifications': typeof NotificationsRoute
   '/productions': typeof ProductionsRoute
   '/products': typeof ProductsRoute
@@ -219,6 +234,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/tedarikciler': typeof TedarikcilerRoute
   '/api/backup': typeof ApiBackupRoute
   '/auth/sifre': typeof AuthSifreRoute
   '/settings/backup': typeof SettingsBackupRoute
@@ -242,6 +258,7 @@ export interface FileRoutesById {
   '/invoices': typeof InvoicesRoute
   '/kasa': typeof KasaRoute
   '/mail': typeof MailRoute
+  '/musteriler': typeof MusterilerRoute
   '/notifications': typeof NotificationsRoute
   '/productions': typeof ProductionsRoute
   '/products': typeof ProductsRoute
@@ -249,6 +266,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/tedarikciler': typeof TedarikcilerRoute
   '/api/backup': typeof ApiBackupRoute
   '/auth_/sifre': typeof AuthSifreRoute
   '/settings_/backup': typeof SettingsBackupRoute
@@ -273,6 +291,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/kasa'
     | '/mail'
+    | '/musteriler'
     | '/notifications'
     | '/productions'
     | '/products'
@@ -280,6 +299,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/tedarikciler'
     | '/api/backup'
     | '/auth/sifre'
     | '/settings/backup'
@@ -302,6 +322,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/kasa'
     | '/mail'
+    | '/musteriler'
     | '/notifications'
     | '/productions'
     | '/products'
@@ -309,6 +330,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/tedarikciler'
     | '/api/backup'
     | '/auth/sifre'
     | '/settings/backup'
@@ -331,6 +353,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/kasa'
     | '/mail'
+    | '/musteriler'
     | '/notifications'
     | '/productions'
     | '/products'
@@ -338,6 +361,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/tedarikciler'
     | '/api/backup'
     | '/auth_/sifre'
     | '/settings_/backup'
@@ -361,6 +385,7 @@ export interface RootRouteChildren {
   InvoicesRoute: typeof InvoicesRoute
   KasaRoute: typeof KasaRoute
   MailRoute: typeof MailRoute
+  MusterilerRoute: typeof MusterilerRoute
   NotificationsRoute: typeof NotificationsRoute
   ProductionsRoute: typeof ProductionsRoute
   ProductsRoute: typeof ProductsRoute
@@ -368,6 +393,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
+  TedarikcilerRoute: typeof TedarikcilerRoute
   ApiBackupRoute: typeof ApiBackupRoute
   AuthSifreRoute: typeof AuthSifreRoute
   SettingsBackupRoute: typeof SettingsBackupRoute
@@ -383,6 +409,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tedarikciler': {
+      id: '/tedarikciler'
+      path: '/tedarikciler'
+      fullPath: '/tedarikciler'
+      preLoaderRoute: typeof TedarikcilerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup': {
       id: '/setup'
       path: '/setup'
@@ -430,6 +463,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/musteriler': {
+      id: '/musteriler'
+      path: '/musteriler'
+      fullPath: '/musteriler'
+      preLoaderRoute: typeof MusterilerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mail': {
@@ -585,6 +625,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoicesRoute: InvoicesRoute,
   KasaRoute: KasaRoute,
   MailRoute: MailRoute,
+  MusterilerRoute: MusterilerRoute,
   NotificationsRoute: NotificationsRoute,
   ProductionsRoute: ProductionsRoute,
   ProductsRoute: ProductsRoute,
@@ -592,6 +633,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
+  TedarikcilerRoute: TedarikcilerRoute,
   ApiBackupRoute: ApiBackupRoute,
   AuthSifreRoute: AuthSifreRoute,
   SettingsBackupRoute: SettingsBackupRoute,
