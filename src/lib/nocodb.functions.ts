@@ -613,7 +613,13 @@ const BELGE_MAP = {
 } as const;
 
 const TEKLIF_MAP = { ...BELGE_MAP, valid_until: "gecerlilik" } as const;
-const FATURA_MAP = { ...BELGE_MAP, due_date: "vade_tarihi" } as const;
+const FATURA_MAP = {
+  ...BELGE_MAP,
+  due_date: "vade_tarihi",
+  rate: "kur",
+  rate_source: "kur_kaynak",
+  total_try: "tl_toplam",
+} as const;
 
 const KALEM_MAP = {
   product_id: "urun_id",
