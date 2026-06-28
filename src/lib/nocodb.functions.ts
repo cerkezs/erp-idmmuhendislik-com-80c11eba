@@ -661,6 +661,8 @@ const InvoiceInput = z.object({
   due_date: z.string().optional().default(""),
   status: z.string().optional().default("Taslak"),
   currency: z.string().optional().default("TRY"),
+  rate: z.number().optional().default(1),
+  rate_source: z.string().optional().default("tl"),
   notes: z.string().optional().default(""),
   items: z.array(ItemInput).default([]),
 });
