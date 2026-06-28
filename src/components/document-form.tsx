@@ -30,6 +30,8 @@ export type DocData = {
   date?: string;
   status?: string;
   currency?: string;
+  rate?: number;
+  rate_source?: string; // "tcmb" | "manuel" | "tl"
   notes?: string;
   items: DocItem[];
   // teklif/fatura'ya özgü:
