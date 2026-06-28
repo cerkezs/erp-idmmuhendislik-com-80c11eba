@@ -25,6 +25,7 @@ import { Route as FilesRouteImport } from './routes/files'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AlisFaturalariRouteImport } from './routes/alis-faturalari'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsSunucuRouteImport } from './routes/settings_.sunucu'
@@ -120,6 +121,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AlisFaturalariRoute = AlisFaturalariRouteImport.update({
+  id: '/alis-faturalari',
+  path: '/alis-faturalari',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActionsRoute = ActionsRouteImport.update({
   id: '/actions',
   path: '/actions',
@@ -194,6 +200,7 @@ const ApiPublicCronScanRoute = ApiPublicCronScanRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/alis-faturalari': typeof AlisFaturalariRoute
   '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRouteWithChildren
   '/expenses': typeof ExpensesRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/alis-faturalari': typeof AlisFaturalariRoute
   '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRouteWithChildren
   '/expenses': typeof ExpensesRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/alis-faturalari': typeof AlisFaturalariRoute
   '/auth': typeof AuthRoute
   '/companies': typeof CompaniesRouteWithChildren
   '/expenses': typeof ExpensesRoute
@@ -293,6 +302,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/actions'
+    | '/alis-faturalari'
     | '/auth'
     | '/companies'
     | '/expenses'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/actions'
+    | '/alis-faturalari'
     | '/auth'
     | '/companies'
     | '/expenses'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/actions'
+    | '/alis-faturalari'
     | '/auth'
     | '/companies'
     | '/expenses'
@@ -390,6 +402,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
+  AlisFaturalariRoute: typeof AlisFaturalariRoute
   AuthRoute: typeof AuthRoute
   CompaniesRoute: typeof CompaniesRouteWithChildren
   ExpensesRoute: typeof ExpensesRoute
@@ -533,6 +546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/alis-faturalari': {
+      id: '/alis-faturalari'
+      path: '/alis-faturalari'
+      fullPath: '/alis-faturalari'
+      preLoaderRoute: typeof AlisFaturalariRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/actions': {
       id: '/actions'
       path: '/actions'
@@ -649,6 +669,7 @@ const CompaniesRouteWithChildren = CompaniesRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
+  AlisFaturalariRoute: AlisFaturalariRoute,
   AuthRoute: AuthRoute,
   CompaniesRoute: CompaniesRouteWithChildren,
   ExpensesRoute: ExpensesRoute,
