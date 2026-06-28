@@ -70,6 +70,9 @@ function SetupPage() {
               "gorevler",
               "dosyalar",
               "mail_log",
+              "alis_faturalari",
+              "alis_fatura_kalemleri",
+              "cari_hareketler",
             ].map((t) => (
               <li key={t} className="rounded-md bg-muted/40 px-3 py-1.5 font-mono text-xs">
                 {t}
