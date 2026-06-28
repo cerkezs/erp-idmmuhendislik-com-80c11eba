@@ -873,6 +873,7 @@ export const deleteInvoice = createServerFn({ method: "POST" })
         body: JSON.stringify({ Id: r.Id }),
       });
     }
+    await deleteLedgerByRef("fatura_satis", data.id);
     return deleteRecord("faturalar", data.id);
   });
 
