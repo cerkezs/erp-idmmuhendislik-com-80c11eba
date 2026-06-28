@@ -58,11 +58,25 @@ export function DocumentForm({
 }) {
   const listC = useServerFn(listCompanies);
   const listP = useServerFn(listProducts);
+  const fetchRate = useServerFn(getRateForDate);
   const companies = useQuery({ queryKey: ["companies"], queryFn: () => listC() });
   const products = useQuery({ queryKey: ["products"], queryFn: () => listP() });
 
   const [vals, setVals] = useState<DocData>(() => freshDefaults(kind, initial));
+  const [rateLoading, setRateLoading] = useState(false);
   useEffect(() => { setVals(freshDefaults(kind, initial)); }, [initial, kind, open]);
+
+  async function autoFetchRate() {
+    if (!vals.currency || vals.currency === "TRY" || !vals.date) return;
+    setRateLoading(true);
+    try {
+      const r = await fetchRate({ data: { date: vals.date } });
+      if (r) {
+        const v = vals.currency === "USD" ? r.usd : r.eur;
+        setVals((p) => ({ ...p, rate: v, rate_source: "tcmb" }));
+      }
+    } finally { setRateLoading(false); }
+  }
 
   function set<K extends keyof DocData>(k: K, v: DocData[K]) {
     setVals((p) => ({ ...p, [k]: v }));
