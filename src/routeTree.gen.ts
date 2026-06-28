@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TedarikcilerRouteImport } from './routes/tedarikciler'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ReportsRouteImport } from './routes/reports'
@@ -16,6 +17,7 @@ import { Route as QuotesRouteImport } from './routes/quotes'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as ProductionsRouteImport } from './routes/productions'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as MusterilerRouteImport } from './routes/musteriler'
 import { Route as MailRouteImport } from './routes/mail'
 import { Route as KasaRouteImport } from './routes/kasa'
 import { Route as InvoicesRouteImport } from './routes/invoices'
@@ -23,6 +25,7 @@ import { Route as FilesRouteImport } from './routes/files'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as CompaniesRouteImport } from './routes/companies'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AlisFaturalariRouteImport } from './routes/alis-faturalari'
 import { Route as ActionsRouteImport } from './routes/actions'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SettingsSunucuRouteImport } from './routes/settings_.sunucu'
@@ -32,11 +35,17 @@ import { Route as SettingsKullanicilarRouteImport } from './routes/settings_.kul
 import { Route as SettingsKategorilerRouteImport } from './routes/settings_.kategoriler'
 import { Route as SettingsBildirimlerRouteImport } from './routes/settings_.bildirimler'
 import { Route as SettingsBackupRouteImport } from './routes/settings_.backup'
+import { Route as CompaniesIdRouteImport } from './routes/companies.$id'
 import { Route as AuthSifreRouteImport } from './routes/auth_.sifre'
 import { Route as ApiBackupRouteImport } from './routes/api/backup'
 import { Route as PrintKindIdRouteImport } from './routes/print.$kind.$id'
 import { Route as ApiPublicCronScanRouteImport } from './routes/api/public/cron-scan'
 
+const TedarikcilerRoute = TedarikcilerRouteImport.update({
+  id: '/tedarikciler',
+  path: '/tedarikciler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -72,6 +81,11 @@ const NotificationsRoute = NotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MusterilerRoute = MusterilerRouteImport.update({
+  id: '/musteriler',
+  path: '/musteriler',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MailRoute = MailRouteImport.update({
   id: '/mail',
   path: '/mail',
@@ -105,6 +119,11 @@ const CompaniesRoute = CompaniesRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AlisFaturalariRoute = AlisFaturalariRouteImport.update({
+  id: '/alis-faturalari',
+  path: '/alis-faturalari',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ActionsRoute = ActionsRouteImport.update({
@@ -152,6 +171,11 @@ const SettingsBackupRoute = SettingsBackupRouteImport.update({
   path: '/settings/backup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompaniesIdRoute = CompaniesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CompaniesRoute,
+} as any)
 const AuthSifreRoute = AuthSifreRouteImport.update({
   id: '/auth_/sifre',
   path: '/auth/sifre',
@@ -176,13 +200,15 @@ const ApiPublicCronScanRoute = ApiPublicCronScanRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/alis-faturalari': typeof AlisFaturalariRoute
   '/auth': typeof AuthRoute
-  '/companies': typeof CompaniesRoute
+  '/companies': typeof CompaniesRouteWithChildren
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
   '/invoices': typeof InvoicesRoute
   '/kasa': typeof KasaRoute
   '/mail': typeof MailRoute
+  '/musteriler': typeof MusterilerRoute
   '/notifications': typeof NotificationsRoute
   '/productions': typeof ProductionsRoute
   '/products': typeof ProductsRoute
@@ -190,8 +216,10 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/tedarikciler': typeof TedarikcilerRoute
   '/api/backup': typeof ApiBackupRoute
   '/auth/sifre': typeof AuthSifreRoute
+  '/companies/$id': typeof CompaniesIdRoute
   '/settings/backup': typeof SettingsBackupRoute
   '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
@@ -205,13 +233,15 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/alis-faturalari': typeof AlisFaturalariRoute
   '/auth': typeof AuthRoute
-  '/companies': typeof CompaniesRoute
+  '/companies': typeof CompaniesRouteWithChildren
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
   '/invoices': typeof InvoicesRoute
   '/kasa': typeof KasaRoute
   '/mail': typeof MailRoute
+  '/musteriler': typeof MusterilerRoute
   '/notifications': typeof NotificationsRoute
   '/productions': typeof ProductionsRoute
   '/products': typeof ProductsRoute
@@ -219,8 +249,10 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/tedarikciler': typeof TedarikcilerRoute
   '/api/backup': typeof ApiBackupRoute
   '/auth/sifre': typeof AuthSifreRoute
+  '/companies/$id': typeof CompaniesIdRoute
   '/settings/backup': typeof SettingsBackupRoute
   '/settings/bildirimler': typeof SettingsBildirimlerRoute
   '/settings/kategoriler': typeof SettingsKategorilerRoute
@@ -235,13 +267,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/actions': typeof ActionsRoute
+  '/alis-faturalari': typeof AlisFaturalariRoute
   '/auth': typeof AuthRoute
-  '/companies': typeof CompaniesRoute
+  '/companies': typeof CompaniesRouteWithChildren
   '/expenses': typeof ExpensesRoute
   '/files': typeof FilesRoute
   '/invoices': typeof InvoicesRoute
   '/kasa': typeof KasaRoute
   '/mail': typeof MailRoute
+  '/musteriler': typeof MusterilerRoute
   '/notifications': typeof NotificationsRoute
   '/productions': typeof ProductionsRoute
   '/products': typeof ProductsRoute
@@ -249,8 +283,10 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/tedarikciler': typeof TedarikcilerRoute
   '/api/backup': typeof ApiBackupRoute
   '/auth_/sifre': typeof AuthSifreRoute
+  '/companies/$id': typeof CompaniesIdRoute
   '/settings_/backup': typeof SettingsBackupRoute
   '/settings_/bildirimler': typeof SettingsBildirimlerRoute
   '/settings_/kategoriler': typeof SettingsKategorilerRoute
@@ -266,6 +302,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/actions'
+    | '/alis-faturalari'
     | '/auth'
     | '/companies'
     | '/expenses'
@@ -273,6 +310,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/kasa'
     | '/mail'
+    | '/musteriler'
     | '/notifications'
     | '/productions'
     | '/products'
@@ -280,8 +318,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/tedarikciler'
     | '/api/backup'
     | '/auth/sifre'
+    | '/companies/$id'
     | '/settings/backup'
     | '/settings/bildirimler'
     | '/settings/kategoriler'
@@ -295,6 +335,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/actions'
+    | '/alis-faturalari'
     | '/auth'
     | '/companies'
     | '/expenses'
@@ -302,6 +343,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/kasa'
     | '/mail'
+    | '/musteriler'
     | '/notifications'
     | '/productions'
     | '/products'
@@ -309,8 +351,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/tedarikciler'
     | '/api/backup'
     | '/auth/sifre'
+    | '/companies/$id'
     | '/settings/backup'
     | '/settings/bildirimler'
     | '/settings/kategoriler'
@@ -324,6 +368,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/actions'
+    | '/alis-faturalari'
     | '/auth'
     | '/companies'
     | '/expenses'
@@ -331,6 +376,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/kasa'
     | '/mail'
+    | '/musteriler'
     | '/notifications'
     | '/productions'
     | '/products'
@@ -338,8 +384,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/settings'
     | '/setup'
+    | '/tedarikciler'
     | '/api/backup'
     | '/auth_/sifre'
+    | '/companies/$id'
     | '/settings_/backup'
     | '/settings_/bildirimler'
     | '/settings_/kategoriler'
@@ -354,13 +402,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActionsRoute: typeof ActionsRoute
+  AlisFaturalariRoute: typeof AlisFaturalariRoute
   AuthRoute: typeof AuthRoute
-  CompaniesRoute: typeof CompaniesRoute
+  CompaniesRoute: typeof CompaniesRouteWithChildren
   ExpensesRoute: typeof ExpensesRoute
   FilesRoute: typeof FilesRoute
   InvoicesRoute: typeof InvoicesRoute
   KasaRoute: typeof KasaRoute
   MailRoute: typeof MailRoute
+  MusterilerRoute: typeof MusterilerRoute
   NotificationsRoute: typeof NotificationsRoute
   ProductionsRoute: typeof ProductionsRoute
   ProductsRoute: typeof ProductsRoute
@@ -368,6 +418,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
+  TedarikcilerRoute: typeof TedarikcilerRoute
   ApiBackupRoute: typeof ApiBackupRoute
   AuthSifreRoute: typeof AuthSifreRoute
   SettingsBackupRoute: typeof SettingsBackupRoute
@@ -383,6 +434,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tedarikciler': {
+      id: '/tedarikciler'
+      path: '/tedarikciler'
+      fullPath: '/tedarikciler'
+      preLoaderRoute: typeof TedarikcilerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/setup': {
       id: '/setup'
       path: '/setup'
@@ -432,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/musteriler': {
+      id: '/musteriler'
+      path: '/musteriler'
+      fullPath: '/musteriler'
+      preLoaderRoute: typeof MusterilerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mail': {
       id: '/mail'
       path: '/mail'
@@ -479,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/alis-faturalari': {
+      id: '/alis-faturalari'
+      path: '/alis-faturalari'
+      fullPath: '/alis-faturalari'
+      preLoaderRoute: typeof AlisFaturalariRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/actions': {
@@ -544,6 +616,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsBackupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/companies/$id': {
+      id: '/companies/$id'
+      path: '/$id'
+      fullPath: '/companies/$id'
+      preLoaderRoute: typeof CompaniesIdRouteImport
+      parentRoute: typeof CompaniesRoute
+    }
     '/auth_/sifre': {
       id: '/auth_/sifre'
       path: '/auth/sifre'
@@ -575,16 +654,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CompaniesRouteChildren {
+  CompaniesIdRoute: typeof CompaniesIdRoute
+}
+
+const CompaniesRouteChildren: CompaniesRouteChildren = {
+  CompaniesIdRoute: CompaniesIdRoute,
+}
+
+const CompaniesRouteWithChildren = CompaniesRoute._addFileChildren(
+  CompaniesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActionsRoute: ActionsRoute,
+  AlisFaturalariRoute: AlisFaturalariRoute,
   AuthRoute: AuthRoute,
-  CompaniesRoute: CompaniesRoute,
+  CompaniesRoute: CompaniesRouteWithChildren,
   ExpensesRoute: ExpensesRoute,
   FilesRoute: FilesRoute,
   InvoicesRoute: InvoicesRoute,
   KasaRoute: KasaRoute,
   MailRoute: MailRoute,
+  MusterilerRoute: MusterilerRoute,
   NotificationsRoute: NotificationsRoute,
   ProductionsRoute: ProductionsRoute,
   ProductsRoute: ProductsRoute,
@@ -592,6 +685,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
+  TedarikcilerRoute: TedarikcilerRoute,
   ApiBackupRoute: ApiBackupRoute,
   AuthSifreRoute: AuthSifreRoute,
   SettingsBackupRoute: SettingsBackupRoute,
@@ -607,13 +701,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

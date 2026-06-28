@@ -12,6 +12,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { listCompanies, listProducts } from "@/lib/nocodb.functions";
+import { getRateForDate } from "@/lib/rates.functions";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 
 export type DocItem = {
@@ -29,6 +30,8 @@ export type DocData = {
   date?: string;
   status?: string;
   currency?: string;
+  rate?: number;
+  rate_source?: string; // "tcmb" | "manuel" | "tl"
   notes?: string;
   items: DocItem[];
   // teklif/fatura'ya özgü:
@@ -55,11 +58,25 @@ export function DocumentForm({
 }) {
   const listC = useServerFn(listCompanies);
   const listP = useServerFn(listProducts);
+  const fetchRate = useServerFn(getRateForDate);
   const companies = useQuery({ queryKey: ["companies"], queryFn: () => listC() });
   const products = useQuery({ queryKey: ["products"], queryFn: () => listP() });
 
   const [vals, setVals] = useState<DocData>(() => freshDefaults(kind, initial));
+  const [rateLoading, setRateLoading] = useState(false);
   useEffect(() => { setVals(freshDefaults(kind, initial)); }, [initial, kind, open]);
+
+  async function autoFetchRate() {
+    if (!vals.currency || vals.currency === "TRY" || !vals.date) return;
+    setRateLoading(true);
+    try {
+      const r = await fetchRate({ data: { date: vals.date } });
+      if (r) {
+        const v = vals.currency === "USD" ? r.usd : r.eur;
+        setVals((p) => ({ ...p, rate: v, rate_source: "tcmb" }));
+      }
+    } finally { setRateLoading(false); }
+  }
 
   function set<K extends keyof DocData>(k: K, v: DocData[K]) {
     setVals((p) => ({ ...p, [k]: v }));
@@ -141,15 +158,34 @@ export function DocumentForm({
             </div>
             <div className="grid gap-1.5">
               <Label>Döviz</Label>
-              <Select value={vals.currency || "TRY"} onValueChange={(v) => set("currency", v)}>
+              <Select value={vals.currency || "TRY"} onValueChange={(v) => {
+                setVals((p) => ({ ...p, currency: v, rate: v === "TRY" ? 1 : p.rate, rate_source: v === "TRY" ? "tl" : p.rate_source }));
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="TRY">TRY (₺)</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="EUR">EUR (€)</SelectItem>
+                  <SelectItem value="TRY">₺ TRY</SelectItem>
+                  <SelectItem value="USD">$ USD</SelectItem>
+                  <SelectItem value="EUR">€ EUR</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {vals.currency && vals.currency !== "TRY" && (
+              <div className="grid gap-1.5">
+                <Label>Kur (1 {vals.currency} = ? ₺)</Label>
+                <div className="flex gap-1">
+                  <Input
+                    type="number" step="0.0001" className="h-9"
+                    value={vals.rate ?? ""}
+                    onChange={(e) => setVals((p) => ({ ...p, rate: parseFloat(e.target.value) || 0, rate_source: "manuel" }))}
+                    placeholder="örn 34.20"
+                  />
+                  <Button type="button" size="sm" variant="outline" onClick={autoFetchRate} disabled={rateLoading} title="TCMB'den o günkü kuru çek">
+                    {rateLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "TCMB"}
+                  </Button>
+                </div>
+                <div className="text-[10px] text-muted-foreground">Kaynak: {vals.rate_source || "—"}</div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-border">
@@ -235,6 +271,10 @@ export function DocumentForm({
                   <td className="px-2 py-1 text-right tabular-nums">{totals.vat.toLocaleString("tr-TR")}</td><td /></tr>
                 <tr><td colSpan={5} className="px-2 py-1 text-right font-semibold">Genel Toplam</td>
                   <td className="px-2 py-1 text-right font-semibold tabular-nums">{totals.total.toLocaleString("tr-TR")} {vals.currency}</td><td /></tr>
+                {vals.currency && vals.currency !== "TRY" && (vals.rate || 0) > 0 && (
+                  <tr><td colSpan={5} className="px-2 py-1 text-right text-xs text-muted-foreground">TL Karşılığı (kur {vals.rate})</td>
+                    <td className="px-2 py-1 text-right text-xs tabular-nums">{round2(totals.total * (vals.rate || 0)).toLocaleString("tr-TR")} ₺</td><td /></tr>
+                )}
               </tfoot>
             </table>
           </div>
@@ -264,6 +304,8 @@ function freshDefaults(kind: "quote" | "invoice", initial: (DocData & { Id?: num
     date: initial?.date || today,
     status: initial?.status || "Taslak",
     currency: initial?.currency || "TRY",
+    rate: initial?.rate ?? ((initial?.currency || "TRY") === "TRY" ? 1 : undefined),
+    rate_source: initial?.rate_source ?? ((initial?.currency || "TRY") === "TRY" ? "tl" : "manuel"),
     notes: initial?.notes || "",
     items: (initial?.items || []).map((it) => ({
       product_id: it.product_id ?? null,

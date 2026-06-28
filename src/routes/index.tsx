@@ -7,7 +7,7 @@ import { MODULES } from "@/lib/modules";
 import { dashboardSummary, runNotificationTriggers } from "@/lib/nocodb.functions";
 import {
   TrendingUp, TrendingDown, AlertCircle, CheckCircle2,
-  Wallet, ReceiptText, Clock, Factory, Info, Loader2,
+  Wallet, ReceiptText, Clock, Factory, Info, Loader2, FileInput,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -49,12 +49,17 @@ function Dashboard() {
     { label: "Kasa Bakiyesi", value: s ? `${fmtTRY(s.kasaBakiye)} ₺` : "—",
       sub: s ? `${s.kasaCount} kasa toplam` : "", icon: Wallet, tone: "default" as const },
     { label: "Bekleyen Alacak", value: s ? `${fmtTRY(s.bekleyenAlacak)} ₺` : "—",
-      sub: s ? `${s.openInvoiceCount} fatura · ${s.vadesiGecmis} vadesi geçmiş` : "", icon: Clock,
-      tone: s && s.vadesiGecmis > 0 ? "warn" : "default" },
+      sub: s ? `${s.openInvoiceCount} fatura · ${s.vadesiGecmis} vadesi geçmiş` : "", icon: ReceiptText,
+      tone: s && s.vadesiGecmis > 0 ? ("warn" as const) : ("default" as const) },
+    { label: "Bekleyen Ödeme", value: s ? `${fmtTRY(s.bekleyenOdeme ?? 0)} ₺` : "—",
+      sub: s ? `${s.openPurchaseCount ?? 0} alış faturası · ${s.vadesiGecmisOdeme ?? 0} vadesi geçmiş` : "", icon: FileInput,
+      tone: s && (s.vadesiGecmisOdeme ?? 0) > 0 ? ("warn" as const) : ("default" as const) },
     { label: "Bu Ay Tahsilat", value: s ? `${fmtTRY(s.ayTahsilat)} ₺` : "—",
       sub: "Kasa girişleri", icon: TrendingUp, tone: "ok" as const },
     { label: "Bu Ay Gider", value: s ? `${fmtTRY(s.ayGider)} ₺` : "—",
       sub: "Kasa çıkışları + giderler", icon: TrendingDown, tone: "default" as const },
+    { label: "Aktif Üretim", value: s ? String(s.activeProductions) : "—",
+      sub: s ? `${s.totalProductions} toplam emir` : "", icon: Factory, tone: "default" as const },
   ];
 
   return (
@@ -100,22 +105,49 @@ function Dashboard() {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {/* Bekleyen faturalar */}
-          <section className="rounded-lg border border-border bg-card p-4 shadow-sm lg:col-span-2">
+          {/* Bekleyen Alacaklar (satış faturaları) */}
+          <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Bekleyen Faturalar</h2>
+              <h2 className="text-sm font-semibold">Bekleyen Alacaklar</h2>
               <Link to="/invoices" className="text-[11px] text-muted-foreground hover:text-foreground">Tümü →</Link>
             </div>
             {!s ? (
               <div className="py-6 text-center text-xs text-muted-foreground">{isLoading ? "Yükleniyor…" : "—"}</div>
             ) : s.openInvoices.length === 0 ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">Bekleyen fatura yok 🎉</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">Bekleyen alacak yok 🎉</div>
             ) : (
               <ul className="divide-y divide-border text-sm">
                 {s.openInvoices.map((i) => (
                   <li key={i.Id} className="flex items-center justify-between py-2">
                     <div className="min-w-0">
                       <div className="truncate font-medium">{i.number || `#${i.Id}`} · {i.company_name || "—"}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Vade: {i.due_date || "—"} {i.overdue && <span className="ml-1 rounded bg-red-500/15 px-1 text-red-600">vadesi geçti</span>}
+                      </div>
+                    </div>
+                    <div className="text-right tabular-nums font-medium">{fmtTRY(i.total)} ₺</div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Bekleyen Ödemeler (alış faturaları) */}
+          <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Bekleyen Ödemeler</h2>
+              <Link to="/alis-faturalari" className="text-[11px] text-muted-foreground hover:text-foreground">Tümü →</Link>
+            </div>
+            {!s ? (
+              <div className="py-6 text-center text-xs text-muted-foreground">{isLoading ? "Yükleniyor…" : "—"}</div>
+            ) : (s.openPurchases ?? []).length === 0 ? (
+              <div className="py-6 text-center text-xs text-muted-foreground">Bekleyen ödeme yok 🎉</div>
+            ) : (
+              <ul className="divide-y divide-border text-sm">
+                {(s.openPurchases ?? []).map((i) => (
+                  <li key={i.Id} className="flex items-center justify-between py-2">
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">{i.number || `#${i.Id}`} · {i.supplier_name || "—"}</div>
                       <div className="text-[11px] text-muted-foreground">
                         Vade: {i.due_date || "—"} {i.overdue && <span className="ml-1 rounded bg-red-500/15 px-1 text-red-600">vadesi geçti</span>}
                       </div>
